@@ -1,10 +1,10 @@
 ---
 id: TASK-5
 title: AI pipeline + persistence
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-02 20:08'
-updated_date: '2026-03-02 20:10'
+updated_date: '2026-03-03 15:16'
 labels: []
 dependencies:
   - TASK-1

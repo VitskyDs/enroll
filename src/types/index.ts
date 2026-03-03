@@ -15,6 +15,9 @@ export interface Service {
   id: string
   name: string
   price_cents: number | null
+  description?: string
+  duration_minutes?: number | null
+  category?: string
 }
 
 export interface BusinessProfile {

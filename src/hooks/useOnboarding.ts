@@ -1,4 +1,8 @@
-import { useCallback, useReducer } from 'react'
+import { useCallback, useReducer, useRef } from 'react'
+import { fetchPageContent } from '@/lib/jina'
+import { extractServices } from '@/services/extractServices'
+import { generateProgram } from '@/services/generateProgram'
+import { saveToSupabase } from '@/services/saveToSupabase'
 import type {
   BusinessCategory,
   ChatMessage,
@@ -8,60 +12,6 @@ import type {
   OnboardingStep,
   Service,
 } from '@/types'
-
-// ---------------------------------------------------------------------------
-// Stub data
-// ---------------------------------------------------------------------------
-
-const STUB_SERVICES: Service[] = [
-  { id: '1', name: 'Haircut', price_cents: 4500 },
-  { id: '2', name: 'Color treatment', price_cents: 9500 },
-  { id: '3', name: 'Blowout', price_cents: 3500 },
-  { id: '4', name: 'Deep conditioning', price_cents: 2500 },
-  { id: '5', name: 'Highlights', price_cents: 11000 },
-]
-
-const STUB_PROGRAM: LoyaltyProgram = {
-  id: 'stub',
-  business_id: 'stub',
-  program_name: 'The Inner Circle',
-  currency_name: 'Glow Points',
-  earn_rules: [
-    {
-      label: 'Every visit',
-      points_per_dollar: 1,
-      points_per_visit: null,
-      description: 'Earn 1 Glow Point for every dollar spent',
-    },
-    {
-      label: 'Birthday bonus',
-      points_per_dollar: null,
-      points_per_visit: 100,
-      description: 'Earn 100 bonus points in your birthday month',
-    },
-  ],
-  reward_tiers: [
-    { name: 'Bronze', points_required: 0, reward_description: 'Member pricing on select services' },
-    { name: 'Silver', points_required: 200, reward_description: '$10 off your next service' },
-    { name: 'Gold', points_required: 500, reward_description: 'Free deep conditioning treatment' },
-    { name: 'Platinum', points_required: 1000, reward_description: 'Complimentary full service + priority booking' },
-  ],
-  bonus_rules: [
-    {
-      label: 'Referral reward',
-      description: 'Give $15 off to a friend, get 50 bonus points when they visit',
-      multiplier: null,
-    },
-    {
-      label: 'Double-point Tuesdays',
-      description: 'Earn 2x points on all services every Tuesday',
-      multiplier: 2,
-    },
-  ],
-  referral_description: 'Share your unique referral link. Your friend gets $15 off their first visit — you earn 50 bonus Glow Points when they redeem it.',
-  brand_voice_summary: 'Warm, aspirational, and inclusive. Messaging should feel like an invitation to belong to something special.',
-  created_at: new Date().toISOString(),
-}
 
 // ---------------------------------------------------------------------------
 // State
@@ -110,6 +60,7 @@ const INITIAL_STATE: OnboardingState = {
 
 type Action =
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
+  | { type: 'UPDATE_MESSAGE'; id: string; content: string }
   | { type: 'SET_TYPING'; value: boolean }
   | { type: 'SET_STEP'; step: OnboardingStep }
   | { type: 'SET_NAME'; name: string }
@@ -124,6 +75,13 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
   switch (action.type) {
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.message] }
+    case 'UPDATE_MESSAGE':
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.id === action.id ? { ...m, content: action.content } : m,
+        ),
+      }
     case 'SET_TYPING':
       return { ...state, isTyping: action.value }
     case 'SET_STEP':
@@ -154,6 +112,10 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
 export function useOnboarding() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
+  // Always-fresh state ref — prevents stale closures in async callbacks
+  const stateRef = useRef(state)
+  stateRef.current = state
+
   // Helpers
   const addMsg = useCallback((msg: ChatMessage) => {
     dispatch({ type: 'ADD_MESSAGE', message: msg })
@@ -167,7 +129,7 @@ export function useOnboarding() {
     dispatch({ type: 'SET_STEP', step })
   }, [])
 
-  // Simulates an async AI message with a typing delay
+  // Shows a typing indicator then adds an assistant message after a short delay
   const aiReply = useCallback(
     (content: string, delay = 800, widget?: ChatMessage['widget']): Promise<void> => {
       return new Promise((resolve) => {
@@ -179,13 +141,16 @@ export function useOnboarding() {
         }, delay)
       })
     },
-    [addMsg, setTyping]
+    [addMsg, setTyping],
   )
 
   // Start the flow
   const start = useCallback(async () => {
     setStep('greeting')
-    await aiReply("Hey! I'm Enroll. I'll help you set up a loyalty program tailored to your business — it takes about 2 minutes.", 600)
+    await aiReply(
+      "Hey! I'm Enroll. I'll help you set up a loyalty program tailored to your business — it takes about 2 minutes.",
+      600,
+    )
     await aiReply("Let's start with the basics. What's the name of your business?", 400)
     setStep('collect_name')
   }, [aiReply, setStep])
@@ -208,7 +173,9 @@ export function useOnboarding() {
           const category: BusinessCategory = CATEGORY_MAP[raw] ?? 'other'
           dispatch({ type: 'SET_CATEGORY', category })
           setStep('collect_website')
-          await aiReply("Do you have a website? If so, paste the URL — I'll use it to learn about your services. Otherwise just type \"skip\".")
+          await aiReply(
+            'Do you have a website? If so, paste the URL — I\'ll use it to learn about your services. Otherwise just type "skip".',
+          )
           break
         }
 
@@ -216,22 +183,47 @@ export function useOnboarding() {
           const url = value.toLowerCase() === 'skip' ? '' : value
           dispatch({ type: 'SET_WEBSITE', url })
 
-          // Crawling phase
+          // Crawling phase — live Jina fetch
           setStep('crawling')
-          await aiReply(`${url ? `Scanning ${url}` : 'No website — no problem'}. Pulling together what I need…`, 1200)
+          let pageContent = ''
+          if (url) {
+            setTyping(true)
+            try {
+              pageContent = await fetchPageContent(url)
+              setTyping(false)
+              addMsg(assistantMsg('Got your site. Identifying your services…'))
+            } catch (err) {
+              console.error('Jina fetch failed:', err)
+              setTyping(false)
+              addMsg(assistantMsg("Couldn't load your website — no problem, I'll continue without it."))
+            }
+          } else {
+            addMsg(assistantMsg("No website — no problem. Let's continue."))
+          }
 
-          // Extracting phase
+          // Extracting phase — live Claude call
           setStep('extracting')
-          await aiReply('Identifying your services and pricing…', 1400)
+          let services: Service[] = []
+          if (pageContent) {
+            setTyping(true)
+            try {
+              services = await extractServices(stateRef.current.businessName, pageContent)
+            } catch (err) {
+              console.error('Service extraction failed:', err)
+            }
+            setTyping(false)
+          }
 
-          dispatch({ type: 'SET_SERVICES', services: STUB_SERVICES })
-          dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(STUB_SERVICES.map((s) => s.id)) })
+          dispatch({ type: 'SET_SERVICES', services })
+          dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(services.map((s) => s.id)) })
 
           setStep('confirm_services')
           await aiReply(
-            "Here's what I found. Deselect any that don't apply, then hit confirm.",
-            600,
-            'service_selector'
+            services.length > 0
+              ? "Here's what I found. Deselect any that don't apply, then hit confirm."
+              : "I couldn't extract specific services from your site. You can proceed and I'll still build a great program.",
+            400,
+            'service_selector',
           )
           break
         }
@@ -240,7 +232,7 @@ export function useOnboarding() {
           break
       }
     },
-    [state.step, addMsg, aiReply, setStep]
+    [state.step, addMsg, aiReply, setStep, setTyping],
   )
 
   // Service confirmation
@@ -253,7 +245,7 @@ export function useOnboarding() {
       setStep('collect_goal')
       await aiReply("What's the main thing you want your loyalty program to achieve?", 600, 'goal_selector')
     },
-    [addMsg, aiReply, setStep]
+    [addMsg, aiReply, setStep],
   )
 
   // Goal selection
@@ -268,23 +260,75 @@ export function useOnboarding() {
       }
       addMsg(userMsg(labels[goal]))
 
-      // Generating phase
+      // Generating phase — live streaming Claude call
       setStep('generating')
-      await aiReply('Building your loyalty program…', 2000)
 
-      // Saving phase
+      const streamMsgId = makeId()
+      addMsg({
+        id: streamMsgId,
+        role: 'assistant',
+        content: 'Designing your loyalty program…',
+        timestamp: new Date(),
+      })
+
+      const selectedServices = stateRef.current.services.filter((s) =>
+        stateRef.current.selectedServiceIds.has(s.id),
+      )
+
+      let program: LoyaltyProgram
+      let accumulated = ''
+      try {
+        program = await generateProgram(
+          stateRef.current.businessName,
+          stateRef.current.businessCategory!,
+          goal,
+          selectedServices,
+          (delta) => {
+            accumulated += delta
+            dispatch({ type: 'UPDATE_MESSAGE', id: streamMsgId, content: accumulated })
+          },
+        )
+      } catch (err) {
+        console.error('Program generation failed:', err)
+        dispatch({
+          type: 'UPDATE_MESSAGE',
+          id: streamMsgId,
+          content: 'Something went wrong generating your program. Please refresh and try again.',
+        })
+        return
+      }
+
+      // Replace streamed JSON with a clean transition message
+      dispatch({ type: 'UPDATE_MESSAGE', id: streamMsgId, content: 'Program designed. Saving…' })
+
+      // Saving phase — live Supabase inserts
       setStep('saving')
-      const program = { ...STUB_PROGRAM, business_id: state.businessName }
+      try {
+        const { business_id, program_id } = await saveToSupabase(
+          stateRef.current.businessName,
+          stateRef.current.businessCategory!,
+          stateRef.current.websiteUrl,
+          goal,
+          selectedServices,
+          program,
+        )
+        program = { ...program, id: program_id, business_id }
+      } catch (err) {
+        console.error('Supabase save failed:', err)
+        addMsg(
+          assistantMsg("Couldn't save to the database — but your program is ready to preview below."),
+        )
+      }
+
       dispatch({ type: 'SET_PROGRAM', program })
-      await aiReply('Saving your program…', 800)
 
       setStep('done')
       await aiReply(
-        `Your loyalty program is ready, ${state.businessName}! Here's what I put together for you.`,
-        400
+        `Your loyalty program is ready, ${stateRef.current.businessName}! Here's what I put together for you.`,
+        400,
       )
     },
-    [addMsg, aiReply, setStep, state.businessName]
+    [addMsg, aiReply, setStep],
   )
 
   return {
