@@ -1,7 +1,7 @@
 ---
 id: TASK-1
 title: Project setup + chat shell
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-02 19:17'
 updated_date: '2026-03-02 20:07'
