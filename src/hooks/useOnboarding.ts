@@ -1,6 +1,4 @@
 import { useCallback, useReducer, useRef } from 'react'
-import { fetchPageContent } from '@/lib/jina'
-import { extractServices } from '@/services/extractServices'
 import { generateProgram } from '@/services/generateProgram'
 import { saveToSupabase } from '@/services/saveToSupabase'
 import type {
@@ -17,17 +15,6 @@ import type {
 // State
 // ---------------------------------------------------------------------------
 
-const CATEGORY_MAP: Record<string, BusinessCategory> = {
-  salon: 'salon',
-  spa: 'spa',
-  barbershop: 'barbershop',
-  barber: 'barbershop',
-  clinic: 'clinic',
-  fitness: 'fitness',
-  gym: 'fitness',
-  wellness: 'wellness',
-  other: 'other',
-}
 
 function makeId() {
   return Math.random().toString(36).slice(2)
@@ -109,7 +96,7 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useOnboarding() {
+export function useOnboarding(userName = 'there') {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   // Always-fresh state ref — prevents stale closures in async callbacks
@@ -147,10 +134,7 @@ export function useOnboarding() {
   // Start the flow
   const start = useCallback(async () => {
     setStep('greeting')
-    await aiReply(
-      "Hey! I'm Enroll. I'll help you set up a loyalty program tailored to your business — it takes about 2 minutes.",
-      600,
-    )
+    await aiReply(`Hello ${userName}, 👋`, 600)
     await aiReply("Let's start with the basics. What's the name of your business?", 400)
     setStep('collect_name')
   }, [aiReply, setStep])
@@ -163,19 +147,9 @@ export function useOnboarding() {
       switch (state.step) {
         case 'collect_name': {
           dispatch({ type: 'SET_NAME', name: value })
-          setStep('collect_type')
-          await aiReply(`Great name! What type of business is ${value}? (e.g. salon, spa, barbershop, clinic)`)
-          break
-        }
-
-        case 'collect_type': {
-          const raw = value.toLowerCase().trim()
-          const category: BusinessCategory = CATEGORY_MAP[raw] ?? 'other'
-          dispatch({ type: 'SET_CATEGORY', category })
+          dispatch({ type: 'SET_CATEGORY', category: 'other' })
           setStep('collect_website')
-          await aiReply(
-            'Do you have a website? If so, paste the URL — I\'ll use it to learn about your services. Otherwise just type "skip".',
-          )
+          await aiReply("What's your website? I'll take a quick peek to understand your services.")
           break
         }
 
@@ -183,46 +157,44 @@ export function useOnboarding() {
           const url = value.toLowerCase() === 'skip' ? '' : value
           dispatch({ type: 'SET_WEBSITE', url })
 
-          // Crawling phase — live Jina fetch
-          setStep('crawling')
-          let pageContent = ''
-          if (url) {
-            setTyping(true)
-            try {
-              pageContent = await fetchPageContent(url)
-              setTyping(false)
-              addMsg(assistantMsg('Got your site. Identifying your services…'))
-            } catch (err) {
-              console.error('Jina fetch failed:', err)
-              setTyping(false)
-              addMsg(assistantMsg("Couldn't load your website — no problem, I'll continue without it."))
-            }
-          } else {
-            addMsg(assistantMsg("No website — no problem. Let's continue."))
-          }
-
-          // Extracting phase — live Claude call
-          setStep('extracting')
-          let services: Service[] = []
-          if (pageContent) {
-            setTyping(true)
-            try {
-              services = await extractServices(stateRef.current.businessName, pageContent)
-            } catch (err) {
-              console.error('Service extraction failed:', err)
-            }
-            setTyping(false)
-          }
+          // TODO: replace with live Jina + Claude extraction
+          const services: Service[] = [
+            {
+              id: '1',
+              name: 'Haircut & style',
+              description: 'Precision cut and blow-dry tailored to your hair type.',
+              duration_minutes: 60,
+              price_cents: 8500,
+              subscription_price_cents: 7500,
+              category: 'hair',
+            },
+            {
+              id: '2',
+              name: 'Color treatment',
+              description: 'Full color or highlights with conditioning finish.',
+              duration_minutes: 120,
+              price_cents: 15000,
+              subscription_price_cents: 13500,
+              category: 'hair',
+            },
+            {
+              id: '3',
+              name: 'Deep conditioning',
+              description: 'Intensive moisture treatment for damaged or dry hair.',
+              duration_minutes: 45,
+              price_cents: 5500,
+              subscription_price_cents: 4900,
+              category: 'hair',
+            },
+          ]
 
           dispatch({ type: 'SET_SERVICES', services })
           dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(services.map((s) => s.id)) })
 
           setStep('confirm_services')
           await aiReply(
-            services.length > 0
-              ? "Here's what I found. Deselect any that don't apply, then hit confirm."
-              : "I couldn't extract specific services from your site. You can proceed and I'll still build a great program.",
-            400,
+            `Looks like you run a ${stateRef.current.businessName}. Nice. I've found your services — ready to set them up?`,
+            600,
             'service_selector',
           )
           break
@@ -243,10 +215,31 @@ export function useOnboarding() {
       addMsg(userMsg(`${count} service${count !== 1 ? 's' : ''} confirmed`))
 
       setStep('collect_goal')
-      await aiReply("What's the main thing you want your loyalty program to achieve?", 600, 'goal_selector')
+      await aiReply(
+        "Great! The services are now added to your business. Next, let's set up your loyalty program.",
+        600,
+        'service_actions',
+      )
     },
     [addMsg, aiReply, setStep],
   )
+
+  // Continue to goal selection after service confirmation
+  const continueToGoal = useCallback(async () => {
+    addMsg(userMsg('Continue'))
+    await aiReply("What's the main thing you want your loyalty program to achieve?", 600, 'goal_selector')
+  }, [addMsg, aiReply])
+
+  // Redo service selection
+  const redoServices = useCallback(async () => {
+    addMsg(userMsg('Redo'))
+    setStep('confirm_services')
+    await aiReply(
+      "No problem — here are your services again. Make your changes and hit Done.",
+      400,
+      'service_selector',
+    )
+  }, [addMsg, aiReply, setStep])
 
   // Goal selection
   const selectGoal = useCallback(
@@ -254,18 +247,18 @@ export function useOnboarding() {
       dispatch({ type: 'SET_GOAL', goal })
 
       const labels: Record<LoyaltyGoal, string> = {
-        retention: 'keep clients coming back',
-        referrals: 'grow through referrals',
-        frequency: 'increase visit frequency',
+        retention: 'Retain customers',
+        referrals: 'Gain new members',
+        frequency: 'Increase recurring revenue',
       }
       addMsg(userMsg(labels[goal]))
 
-      // Generating phase — live streaming Claude call
+      // Generating phase — streaming happens internally but not shown in chat
       setStep('generating')
 
-      const streamMsgId = makeId()
+      const statusMsgId = makeId()
       addMsg({
-        id: streamMsgId,
+        id: statusMsgId,
         role: 'assistant',
         content: 'Designing your loyalty program…',
         timestamp: new Date(),
@@ -276,32 +269,25 @@ export function useOnboarding() {
       )
 
       let program: LoyaltyProgram
-      let accumulated = ''
       try {
         program = await generateProgram(
           stateRef.current.businessName,
           stateRef.current.businessCategory!,
           goal,
           selectedServices,
-          (delta) => {
-            accumulated += delta
-            dispatch({ type: 'UPDATE_MESSAGE', id: streamMsgId, content: accumulated })
-          },
         )
       } catch (err) {
         console.error('Program generation failed:', err)
         dispatch({
           type: 'UPDATE_MESSAGE',
-          id: streamMsgId,
+          id: statusMsgId,
           content: 'Something went wrong generating your program. Please refresh and try again.',
         })
         return
       }
 
-      // Replace streamed JSON with a clean transition message
-      dispatch({ type: 'UPDATE_MESSAGE', id: streamMsgId, content: 'Program designed. Saving…' })
-
-      // Saving phase — live Supabase inserts
+      // Saving phase
+      dispatch({ type: 'UPDATE_MESSAGE', id: statusMsgId, content: 'Almost there — saving your program…' })
       setStep('saving')
       try {
         const { business_id, program_id } = await saveToSupabase(
@@ -315,27 +301,41 @@ export function useOnboarding() {
         program = { ...program, id: program_id, business_id }
       } catch (err) {
         console.error('Supabase save failed:', err)
-        addMsg(
-          assistantMsg("Couldn't save to the database — but your program is ready to preview below."),
-        )
+        dispatch({
+          type: 'UPDATE_MESSAGE',
+          id: statusMsgId,
+          content: `Warning: your program was generated but could not be saved (${err instanceof Error ? err.message : 'unknown error'}). You can still review it below.`,
+        })
       }
 
       dispatch({ type: 'SET_PROGRAM', program })
 
-      setStep('done')
-      await aiReply(
-        `Your loyalty program is ready, ${stateRef.current.businessName}! Here's what I put together for you.`,
-        400,
-      )
+      // Update status, then show program sections inline in chat
+      dispatch({ type: 'UPDATE_MESSAGE', id: statusMsgId, content: "Here's what I put together for you." })
+      addMsg(assistantMsg('', 'program_overview'))
+      addMsg(assistantMsg('', 'program_name'))
+      addMsg(assistantMsg('', 'program_earn'))
+      addMsg(assistantMsg('', 'program_tiers'))
+      addMsg(assistantMsg('What do you think?'))
+      addMsg(assistantMsg('', 'program_done'))
+
+      setStep('reviewing')
     },
-    [addMsg, aiReply, setStep],
+    [addMsg, setStep],
   )
+
+  const reviewDone = useCallback(() => {
+    setStep('done')
+  }, [setStep])
 
   return {
     state,
     start,
     handleUserInput,
     confirmServices,
+    continueToGoal,
+    redoServices,
     selectGoal,
+    reviewDone,
   }
 }

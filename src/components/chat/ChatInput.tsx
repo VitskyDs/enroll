@@ -1,7 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
+import { Send } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { ArrowUp } from 'lucide-react'
 
 interface Props {
   onSend: (value: string) => void
@@ -9,7 +8,7 @@ interface Props {
   placeholder?: string
 }
 
-export function ChatInput({ onSend, disabled, placeholder = 'Type a message…' }: Props) {
+export function ChatInput({ onSend, disabled, placeholder = 'Type a message' }: Props) {
   const [value, setValue] = useState('')
 
   function handleSend() {
@@ -27,22 +26,23 @@ export function ChatInput({ onSend, disabled, placeholder = 'Type a message…' 
   }
 
   return (
-    <div className="flex gap-2 p-4 border-t border-border bg-background">
+    <div className="flex gap-2 px-4 py-6 bg-white">
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        className="flex-1"
+        className="flex-1 h-10"
       />
-      <Button
-        size="icon"
+      <button
         onClick={handleSend}
         disabled={disabled || !value.trim()}
+        className="flex items-center justify-center w-10 h-10 rounded bg-zinc-900 text-white shrink-0 disabled:opacity-40"
+        aria-label="Send message"
       >
-        <ArrowUp className="w-4 h-4" />
-      </Button>
+        <Send className="w-5 h-5" />
+      </button>
     </div>
   )
 }

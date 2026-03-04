@@ -1,53 +1,18 @@
-import { useEffect } from 'react'
-import { ChatShell } from '@/components/chat/ChatShell'
-import { ServiceSelector } from '@/components/ServiceSelector'
-import { GoalSelector } from '@/components/GoalSelector'
-import { ProgramPreview } from '@/components/ProgramPreview'
-import { useOnboarding } from '@/hooks/useOnboarding'
-import type { ChatMessage, LoyaltyGoal } from '@/types'
+import { Routes, Route } from 'react-router-dom'
+import LandingPage from '@/pages/LandingPage'
+import BasicsPage from '@/pages/onboarding/BasicsPage'
+import ProgramPage from '@/pages/onboarding/ProgramPage'
+import ConfirmPage from '@/pages/onboarding/ConfirmPage'
+import DashboardPage from '@/pages/DashboardPage'
 
 export default function App() {
-  const { state, start, handleUserInput, confirmServices, selectGoal } = useOnboarding()
-
-  useEffect(() => {
-    start()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (state.step === 'done' && state.programDraft) {
-    return (
-      <ProgramPreview
-        program={state.programDraft}
-        businessName={state.businessName}
-        onBack={() => window.location.reload()}
-      />
-    )
-  }
-
-  function renderWidget(message: ChatMessage) {
-    if (message.widget === 'service_selector' && state.step === 'confirm_services') {
-      return (
-        <ServiceSelector
-          services={state.services}
-          onConfirm={(ids) => confirmServices(ids)}
-        />
-      )
-    }
-    if (message.widget === 'goal_selector' && state.step === 'collect_goal') {
-      return (
-        <GoalSelector onSelect={(goal: LoyaltyGoal) => selectGoal(goal)} />
-      )
-    }
-    return null
-  }
-
   return (
-    <ChatShell
-      messages={state.messages}
-      isTyping={state.isTyping}
-      step={state.step}
-      onSend={handleUserInput}
-      renderWidget={renderWidget}
-    />
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/onboarding" element={<BasicsPage />} />
+      <Route path="/onboarding/program" element={<ProgramPage />} />
+      <Route path="/onboarding/confirm" element={<ConfirmPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
+    </Routes>
   )
 }

@@ -20,11 +20,21 @@ export function MessageList({ messages, isTyping, renderWidget }: Props) {
   return (
     <ScrollArea className="flex-1">
       <div className="px-4 pt-6 pb-2">
-        {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg}>
-            {msg.widget && renderWidget?.(msg)}
-          </ChatMessage>
-        ))}
+        {messages.map((msg) => {
+          const isStandalone = msg.widget === 'service_actions' || msg.widget === 'goal_selector' || msg.widget === 'program_done'
+          return (
+            <div key={msg.id}>
+              <ChatMessage message={msg}>
+                {msg.widget && !isStandalone && renderWidget?.(msg)}
+              </ChatMessage>
+              {isStandalone && (
+                <div className="mt-6 mb-4">
+                  {renderWidget?.(msg)}
+                </div>
+              )}
+            </div>
+          )
+        })}
         {isTyping && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>

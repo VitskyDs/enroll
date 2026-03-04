@@ -15,6 +15,7 @@ export interface Service {
   id: string
   name: string
   price_cents: number | null
+  subscription_price_cents: number | null
   description?: string
   duration_minutes?: number | null
   category?: string
@@ -75,6 +76,7 @@ export type OnboardingStep =
   | 'collect_goal'
   | 'generating'
   | 'saving'
+  | 'reviewing'
   | 'done'
 
 export interface ChatMessage {
@@ -82,7 +84,15 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
-  widget?: 'service_selector' | 'goal_selector'
+  widget?:
+    | 'service_selector'
+    | 'goal_selector'
+    | 'program_overview'
+    | 'program_name'
+    | 'program_earn'
+    | 'program_tiers'
+    | 'program_done'
+    | 'service_actions'
 }
 
 export interface OnboardingState {

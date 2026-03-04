@@ -7,6 +7,7 @@ interface RawService {
   description: string
   duration_minutes: number | null
   price: number | null
+  subscription_price: number | null
   category: string
 }
 
@@ -30,6 +31,7 @@ export async function extractServices(businessName: string, pageContent: string)
     id: String(i + 1),
     name: s.name,
     price_cents: s.price != null ? Math.round(s.price * 100) : null,
+    subscription_price_cents: s.subscription_price != null ? Math.round(s.subscription_price * 100) : null,
     description: s.description,
     duration_minutes: s.duration_minutes,
     category: s.category,

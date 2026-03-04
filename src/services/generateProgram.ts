@@ -13,7 +13,7 @@ export async function generateProgram(
   businessCategory: BusinessCategory,
   goal: LoyaltyGoal,
   services: Service[],
-  onChunk: (delta: string) => void,
+  onChunk?: (delta: string) => void,
 ): Promise<LoyaltyProgram> {
   const { data: examples } = await supabase.from('loyalty_program_examples').select('*').limit(3)
 
@@ -32,7 +32,7 @@ export async function generateProgram(
   })
 
   stream.on('text', (delta) => {
-    onChunk(delta)
+    onChunk?.(delta)
   })
 
   const finalMessage = await stream.finalMessage()

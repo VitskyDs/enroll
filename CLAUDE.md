@@ -27,6 +27,13 @@ In scope: onboarding flow, AI generation, program preview, basic regeneration.
 
 Out of scope: customer-facing tracking, POS integrations, payments, analytics, mobile app.
 
+## Task workflow
+
+New tasks usually come from [backlog/backlog.md](backlog/backlog.md). Check there for the next task to work on.
+
+- Mark a task as `In Progress` when you start working on it.
+- Do **not** mark a task as `Done` — the user acts as QA and will approve completion.
+
 ## Writing and style conventions
 
 - **Sentence case only** for all headings and titles — never Title Case

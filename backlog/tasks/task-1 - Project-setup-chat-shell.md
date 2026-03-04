@@ -4,10 +4,11 @@ title: Project setup + chat shell
 status: Done
 assignee: []
 created_date: '2026-03-02 19:17'
-updated_date: '2026-03-02 20:07'
+updated_date: '2026-03-04 16:51'
 labels: []
 dependencies: []
 priority: high
+ordinal: 2000
 ---
 
 ## Description
