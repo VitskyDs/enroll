@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
-import type { LoyaltyGoal, LoyaltyProgram, Service } from '@/types'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+import { saveToSupabase } from '@/services/saveToSupabase'
+import type { BusinessCategory, LoyaltyGoal, LoyaltyProgram, Service } from '@/types'
 
 const GOAL_LABELS: Record<LoyaltyGoal, string> = {
   retention: 'Retain customers',
@@ -31,16 +33,34 @@ function SummaryCard({ title, description }: SummaryCardProps) {
 export default function ConfirmPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { program, businessName, services, goal } = (location.state as {
+  const { program, businessName, businessCategory, websiteUrl, services, goal } = (location.state as {
     program: LoyaltyProgram
     businessName: string
+    businessCategory: BusinessCategory
+    websiteUrl: string
     services: Service[]
     goal: LoyaltyGoal
   }) ?? {}
 
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
   if (!program || !businessName) {
     navigate('/onboarding')
     return null
+  }
+
+  async function handleConfirm() {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await saveToSupabase(businessName, businessCategory ?? 'other', websiteUrl ?? '', goal, services ?? [], program)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Could not save your program. Please try again.')
+      setSaving(false)
+      return
+    }
+    navigate('/dashboard')
   }
 
   const primaryEarnRule = program.earn_rules.find((r) => r.points_per_dollar != null)
@@ -75,10 +95,7 @@ export default function ConfirmPage() {
             </p>
           </div>
           <div className="flex flex-col gap-4">
-            <SummaryCard
-              title={businessName}
-              description={program.brand_voice_summary}
-            />
+            <SummaryCard title={businessName} description={program.brand_voice_summary} />
             <div className="bg-white border border-zinc-200 rounded-md px-4 py-4 flex flex-col gap-2">
               <p className="text-base font-semibold text-zinc-900 leading-6">Services</p>
               <div className="flex flex-col gap-2">
@@ -105,31 +122,24 @@ export default function ConfirmPage() {
           </div>
           <div className="flex flex-col gap-4">
             {goal && (
-              <SummaryCard
-                title={`${GOAL_LABELS[goal]}`}
-                description={GOAL_PURPOSE[goal]}
-              />
+              <SummaryCard title={GOAL_LABELS[goal]} description={GOAL_PURPOSE[goal]} />
             )}
             <SummaryCard
-              title={`${program.program_name}`}
+              title={program.program_name}
               description={`A tiered points program designed for ${goal ? GOAL_LABELS[goal].toLowerCase() : 'growing your business'}, building long-term loyalty.`}
             />
-            <SummaryCard
-              title="💰 Earning points"
-              description={earnDescription}
-            />
+            <SummaryCard title="Earning points" description={earnDescription} />
             {program.bonus_rules.length > 0 && (
-              <SummaryCard
-                title="🤝 Referral bonus"
-                description={program.bonus_rules[0].description}
-              />
+              <SummaryCard title="Referral bonus" description={program.bonus_rules[0].description} />
             )}
             <div className="bg-white border border-zinc-200 rounded-md px-4 py-4 flex flex-col gap-2">
-              <p className="text-base font-semibold text-zinc-900 leading-6">🏅 Tier benefits</p>
+              <p className="text-base font-semibold text-zinc-900 leading-6">Tier benefits</p>
               <div className="flex flex-col gap-1.5">
                 {program.reward_tiers.map((tier) => (
                   <p key={tier.name} className="text-sm text-zinc-500 leading-5">
-                    <span className="font-semibold text-zinc-900">{tier.name} ({tier.points_required.toLocaleString()} pts): </span>
+                    <span className="font-semibold text-zinc-900">
+                      {tier.name} ({tier.points_required.toLocaleString()} pts):{' '}
+                    </span>
                     {tier.reward_description}
                   </p>
                 ))}
@@ -141,15 +151,21 @@ export default function ConfirmPage() {
 
       {/* Actions */}
       <div className="flex flex-col gap-2 px-4 py-6 shrink-0">
+        {saveError && (
+          <p className="text-sm text-red-600 text-center">{saveError}</p>
+        )}
         <button
-          onClick={() => navigate('/dashboard')}
-          className="w-full h-12 rounded bg-zinc-900 text-white text-base font-medium"
+          onClick={handleConfirm}
+          disabled={saving}
+          className="w-full h-12 rounded bg-zinc-900 text-white text-base font-medium flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          Confirm and continue
+          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+          {saving ? 'Saving…' : 'Confirm and continue'}
         </button>
         <button
           onClick={() => navigate('/onboarding')}
-          className="w-full h-12 rounded bg-zinc-100 text-zinc-900 text-base font-medium"
+          disabled={saving}
+          className="w-full h-12 rounded bg-zinc-100 text-zinc-900 text-base font-medium disabled:opacity-60"
         >
           Start over
         </button>

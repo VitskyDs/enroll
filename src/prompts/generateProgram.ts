@@ -40,7 +40,7 @@ Primary goal: ${goalDesc}
 Services offered:
 ${servicesText}
 ${examplesSection}
-Generate a tailored loyalty program for this business. Return JSON only — no markdown, no code fences, no explanation.
+Generate a tailored loyalty program for this business. Return JSON only — no markdown, no code fences, no explanation. All generated content must be professional, appropriate for business use, and free from offensive, harmful, or inappropriate language.
 
 Use this exact structure:
 {

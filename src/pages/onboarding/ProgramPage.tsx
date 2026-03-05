@@ -33,7 +33,7 @@ export default function ProgramPage() {
 
   function goToConfirm() {
     navigate('/onboarding/confirm', {
-      state: { program: state.programDraft, businessName, services, goal: state.goal },
+      state: { program: state.programDraft, businessName, businessCategory, websiteUrl, services, goal: state.goal },
     })
   }
 
