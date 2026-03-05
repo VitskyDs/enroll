@@ -4,12 +4,12 @@ title: Add guardrails to loyalty program creation
 status: To Do
 assignee: []
 created_date: '2026-03-04 00:00'
-updated_date: '2026-03-04 00:00'
+updated_date: '2026-03-05 16:44'
 labels: []
 dependencies:
   - TASK-9
 priority: high
-ordinal: 1400
+ordinal: 650
 ---
 
 ## Description

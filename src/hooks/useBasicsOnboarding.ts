@@ -84,7 +84,7 @@ export interface OnCompleteData {
   businessCategory: BusinessCategory
   websiteUrl: string
   services: Service[]
-  goal: LoyaltyGoal
+  goal?: LoyaltyGoal
 }
 
 export function useBasicsOnboarding(
@@ -273,12 +273,21 @@ export function useBasicsOnboarding(
 
   const start = useCallback(() => {
     dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
-    const name = userName !== 'there' ? userName : null
-    const greeting = name
-      ? `Greet the user by name (${name}) and ask for their business name or website URL.`
-      : 'Greet the user and ask for their business name or website URL.'
-    runLLMTurn(`[${greeting}]`)
-  }, [runLLMTurn, userName])
+    const name = userName && userName !== 'there' ? userName : null
+    const greetingContent = name ? `Hi ${name} 👋` : 'Hi there 👋'
+    const introContent = "I'm here to help you set up your loyalty program in just a few minutes. To get started, **what's your business name or website URL?**"
+
+    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: greetingContent, timestamp: new Date() } })
+    dispatch({ type: 'SET_TYPING', value: true })
+    setTimeout(() => {
+      dispatch({ type: 'SET_TYPING', value: false })
+      dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: introContent, timestamp: new Date() } })
+      llmMessagesRef.current = [
+        { role: 'user', content: '[Begin onboarding]' },
+        { role: 'assistant', content: `${greetingContent}\n\n${introContent}` },
+      ]
+    }, 1200)
+  }, [userName])
 
   const handleUserInput = useCallback((value: string) => {
     dispatch({ type: 'ADD_MESSAGE', message: userMsg(value) })
@@ -294,20 +303,28 @@ export function useBasicsOnboarding(
     dispatch({ type: 'SET_SELECTED_IDS', ids: selectedIds })
     const count = selectedIds.size
     dispatch({ type: 'ADD_MESSAGE', message: userMsg(`${count} service${count !== 1 ? 's' : ''} confirmed`) })
-    dispatch({ type: 'SET_STEP', step: 'collect_goal' })
-    pendingWidgetRef.current = 'goal_selector'
-    runLLMTurn(`Services confirmed (${count} selected). Now ask about the loyalty goal.`)
-  }, [runLLMTurn])
+    dispatch({ type: 'SET_STEP', step: 'confirm_services' })
+    dispatch({
+      type: 'ADD_MESSAGE',
+      message: {
+        id: makeId(),
+        role: 'assistant',
+        content: "Great! The services are now added to your business. Next, let's set up your loyalty program.",
+        timestamp: new Date(),
+        widget: 'service_actions',
+      },
+    })
+  }, [])
 
-  const selectGoal = useCallback((goal: LoyaltyGoal) => {
-    const labels: Record<LoyaltyGoal, string> = {
-      retention: 'Retain customers',
-      referrals: 'Gain new members',
-      frequency: 'Increase recurring revenue',
-    }
-    dispatch({ type: 'ADD_MESSAGE', message: userMsg(labels[goal]) })
-    runLLMTurn(labels[goal])
-  }, [runLLMTurn])
+  const continueToProgram = useCallback(() => {
+    const s = stateRef.current
+    onCompleteRef.current?.({
+      businessName: s.businessName,
+      businessCategory: s.businessCategory ?? 'other',
+      websiteUrl: s.websiteUrl,
+      services: s.services.filter((sv) => s.selectedServiceIds.has(sv.id)),
+    })
+  }, [])
 
   const selectedServices = state.services.filter((s) => state.selectedServiceIds.has(s.id))
 
@@ -317,7 +334,7 @@ export function useBasicsOnboarding(
     handleUserInput,
     selectUrl,
     confirmServices,
-    selectGoal,
+    continueToProgram,
     selectedServices,
   }
 }

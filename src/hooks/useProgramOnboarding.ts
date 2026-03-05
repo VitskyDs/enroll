@@ -164,7 +164,7 @@ export function useProgramOnboarding({ businessName, businessCategory, websiteUr
       // Goal already collected in BasicsPage — skip GoalSelector and generate immediately
       await selectGoal(goalProp)
     } else {
-      await aiReply("What's the main thing you want your loyalty program to achieve?", 600, 'goal_selector')
+      await aiReply('What is your primary goal you want the loyalty program to help you achieve?', 600, 'goal_selector')
     }
   }, [aiReply, goalProp, selectGoal])
 

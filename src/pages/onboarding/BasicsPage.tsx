@@ -3,9 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ChatShell } from '@/components/chat/ChatShell'
 import { UrlSelector } from '@/components/UrlSelector'
 import { ServiceSelector } from '@/components/ServiceSelector'
-import { GoalSelector } from '@/components/GoalSelector'
 import { useBasicsOnboarding } from '@/hooks/useBasicsOnboarding'
-import type { ChatMessage, LoyaltyGoal, OnboardingStep } from '@/types'
+import type { ChatMessage, OnboardingStep } from '@/types'
 
 const INPUT_STEPS: OnboardingStep[] = ['greeting', 'collect_url_or_name', 'manual_entry']
 
@@ -14,7 +13,7 @@ export default function BasicsPage() {
   const location = useLocation()
   const userName = (location.state as { userName?: string })?.userName
 
-  const { state, start, handleUserInput, selectUrl, confirmServices, selectGoal } =
+  const { state, start, handleUserInput, selectUrl, confirmServices, continueToProgram } =
     useBasicsOnboarding(userName, (data) => {
       navigate('/onboarding/program', { state: data })
     })
@@ -42,8 +41,24 @@ export default function BasicsPage() {
         />
       )
     }
-    if (message.widget === 'goal_selector' && state.step === 'collect_goal') {
-      return <GoalSelector onSelect={(goal: LoyaltyGoal) => selectGoal(goal)} />
+    if (message.widget === 'service_actions') {
+      return (
+        <div className="flex flex-col gap-2 w-full">
+          <button
+            onClick={continueToProgram}
+            className="w-full h-10 rounded-lg bg-zinc-900 text-white text-sm font-medium"
+          >
+            Continue
+          </button>
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="w-full h-10 rounded-lg bg-zinc-100 text-zinc-900 text-sm font-medium"
+          >
+            Start over
+          </button>
+          <p className="text-sm text-zinc-500 text-center">You can change these anytime</p>
+        </div>
+      )
     }
     return null
   }
