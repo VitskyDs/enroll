@@ -4,11 +4,12 @@ title: Chat processing spinner
 status: To Do
 assignee: []
 created_date: '2026-03-04'
-updated_date: '2026-03-04'
+updated_date: '2026-03-05 09:29'
 labels: []
+milestone: m-0
 dependencies: []
 priority: medium
-ordinal: 3200
+ordinal: 8000
 ---
 
 ## Description

@@ -1,17 +1,17 @@
 ---
 id: TASK-8
 title: Fix Supabase persistence — data not saving to tables
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-03 00:00'
-updated_date: '2026-03-04 17:05'
+updated_date: '2026-03-04 20:15'
 labels:
   - Backend
 milestone: m-0
 dependencies:
   - TASK-5
 priority: high
-ordinal: 1000
+ordinal: 4000
 ---
 
 ## Description

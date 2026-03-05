@@ -4,17 +4,25 @@ import { ChatShell } from '@/components/chat/ChatShell'
 import { GoalSelector } from '@/components/GoalSelector'
 import { ProgramSectionCard } from '@/components/ProgramSectionCard'
 import { useProgramOnboarding } from '@/hooks/useProgramOnboarding'
-import type { ChatMessage, LoyaltyGoal, Service } from '@/types'
+import type { BusinessCategory, ChatMessage, LoyaltyGoal, Service } from '@/types'
 
 export default function ProgramPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { businessName, websiteUrl, services } = (location.state as { businessName: string; websiteUrl: string; services: Service[] }) ?? {}
+  const { businessName, businessCategory, websiteUrl, services, goal } = (location.state as {
+    businessName: string
+    businessCategory: BusinessCategory
+    websiteUrl: string
+    services: Service[]
+    goal: LoyaltyGoal
+  }) ?? {}
+
   const { state, start, selectGoal, advanceReview } = useProgramOnboarding({
     businessName: businessName ?? '',
-    businessCategory: 'other',
+    businessCategory: businessCategory ?? 'other',
     websiteUrl: websiteUrl ?? '',
     services: services ?? [],
+    goal,
   })
 
   useEffect(() => {
@@ -31,7 +39,7 @@ export default function ProgramPage() {
 
   function renderWidget(message: ChatMessage) {
     if (message.widget === 'goal_selector' && state.step === 'collect_goal') {
-      return <GoalSelector onSelect={(goal: LoyaltyGoal) => selectGoal(goal)} />
+      return <GoalSelector onSelect={(g: LoyaltyGoal) => selectGoal(g)} />
     }
 
     if (state.programDraft) {
