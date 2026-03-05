@@ -1,3 +1,4 @@
+import { PROGRAM_GUIDELINES } from './programGuidelines'
 import type { BusinessCategory, LoyaltyGoal, Service } from '@/types'
 
 const GOAL_DESCRIPTIONS: Record<LoyaltyGoal, string> = {
@@ -32,6 +33,10 @@ export function buildGenerateProgramPrompt(
       : ''
 
   return `You are a loyalty program strategist specializing in service businesses.
+
+${PROGRAM_GUIDELINES}
+
+---
 
 Business: ${businessName}
 Type: ${businessCategory}
