@@ -4,8 +4,9 @@ title: Simple admin dashboard
 status: To Do
 assignee: []
 created_date: '2026-03-02 19:17'
-updated_date: '2026-03-02 20:10'
+updated_date: '2026-03-05 09:29'
 labels: []
+milestone: m-0
 dependencies: []
 priority: high
 ordinal: 2000

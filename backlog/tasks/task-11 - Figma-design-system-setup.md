@@ -4,12 +4,12 @@ title: Figma design system setup
 status: To Do
 assignee: []
 created_date: '2026-03-04'
-updated_date: '2026-03-04 16:51'
+updated_date: '2026-03-05 09:04'
 labels:
   - infrastructure
 dependencies: []
 priority: medium
-ordinal: 8000
+ordinal: 9000
 ---
 
 ## Description

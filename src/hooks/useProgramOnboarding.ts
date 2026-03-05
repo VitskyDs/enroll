@@ -1,5 +1,6 @@
 import { useCallback, useReducer, useRef } from 'react'
 import { saveToSupabase } from '@/services/saveToSupabase'
+import { generateProgram } from '@/services/generateProgram'
 import type {
   BusinessCategory,
   ChatMessage,
@@ -8,29 +9,6 @@ import type {
   OnboardingStep,
   Service,
 } from '@/types'
-
-// TODO: replace with live generateProgram + saveToSupabase
-const DUMMY_PROGRAM: LoyaltyProgram = {
-  id: 'dummy',
-  business_id: 'dummy',
-  program_name: 'The Glow Rewards Club',
-  currency_name: 'Glow Points',
-  earn_rules: [
-    { label: 'Per visit', points_per_dollar: null, points_per_visit: 10, description: 'Earn 10 Glow Points every time you visit.' },
-    { label: 'Per dollar spent', points_per_dollar: 1, points_per_visit: null, description: 'Earn 1 Glow Point for every dollar you spend.' },
-  ],
-  reward_tiers: [
-    { name: 'Silver', points_required: 0, reward_description: 'Access to exclusive member discounts.' },
-    { name: 'Gold', points_required: 100, reward_description: '10% off all services + priority booking.' },
-    { name: 'Platinum', points_required: 300, reward_description: '20% off all services + free birthday treatment.' },
-  ],
-  bonus_rules: [
-    { label: 'Referral bonus', description: 'Earn 25 Glow Points when a friend books their first appointment.', multiplier: null },
-  ],
-  referral_description: 'Share your unique referral code and earn Glow Points when your friends visit for the first time.',
-  brand_voice_summary: 'Warm, approachable, and professional — like a trusted friend who happens to be a beauty expert.',
-  created_at: new Date().toISOString(),
-}
 
 function makeId() {
   return Math.random().toString(36).slice(2)
@@ -92,9 +70,10 @@ interface Props {
   businessCategory: BusinessCategory
   websiteUrl: string
   services: Service[]
+  goal?: LoyaltyGoal
 }
 
-export function useProgramOnboarding({ businessName, businessCategory, websiteUrl, services }: Props) {
+export function useProgramOnboarding({ businessName, businessCategory, websiteUrl, services, goal: goalProp }: Props) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const stateRef = useRef(state)
   stateRef.current = state
@@ -116,10 +95,6 @@ export function useProgramOnboarding({ businessName, businessCategory, websiteUr
     [addMsg, setTyping],
   )
 
-  const start = useCallback(async () => {
-    await aiReply("What's the main thing you want your loyalty program to achieve?", 600, 'goal_selector')
-  }, [aiReply])
-
   const selectGoal = useCallback(
     async (goal: LoyaltyGoal) => {
       const labels: Record<LoyaltyGoal, string> = {
@@ -127,16 +102,28 @@ export function useProgramOnboarding({ businessName, businessCategory, websiteUr
         referrals: 'Gain new members',
         frequency: 'Increase recurring revenue',
       }
-      addMsg(userMsg(labels[goal]))
+      // Only add user message when goal wasn't pre-provided (i.e. user clicked GoalSelector)
+      if (!goalProp) {
+        addMsg(userMsg(labels[goal]))
+      }
       dispatch({ type: 'SET_GOAL', goal })
       setStep('generating')
 
       const statusMsgId = makeId()
       addMsg({ id: statusMsgId, role: 'assistant', content: 'Designing your loyalty program…', timestamp: new Date() })
 
-      // TODO (TASK-9): replace DUMMY_PROGRAM with live generateProgram call
-      await new Promise<void>((resolve) => setTimeout(resolve, 1200))
-      let program: LoyaltyProgram = DUMMY_PROGRAM
+      let program: LoyaltyProgram | null = null
+      try {
+        program = await generateProgram(businessName, businessCategory, goal, services)
+      } catch (err) {
+        dispatch({
+          type: 'UPDATE_MESSAGE',
+          id: statusMsgId,
+          content: `Could not generate the program (${err instanceof Error ? err.message : 'unknown error'}). Please try again.`,
+        })
+        setTyping(false)
+        return
+      }
 
       // Save to Supabase
       dispatch({ type: 'UPDATE_MESSAGE', id: statusMsgId, content: 'Almost there — saving your program…' })
@@ -169,8 +156,17 @@ export function useProgramOnboarding({ businessName, businessCategory, websiteUr
       dispatch({ type: 'SET_REVIEW_STEP', step: 0 })
       setStep('reviewing')
     },
-    [addMsg, setStep],
+    [addMsg, setStep, goalProp, businessName, businessCategory, websiteUrl, services],
   )
+
+  const start = useCallback(async () => {
+    if (goalProp) {
+      // Goal already collected in BasicsPage — skip GoalSelector and generate immediately
+      await selectGoal(goalProp)
+    } else {
+      await aiReply("What's the main thing you want your loyalty program to achieve?", 600, 'goal_selector')
+    }
+  }, [aiReply, goalProp, selectGoal])
 
   const advanceReview = useCallback(() => {
     const next = stateRef.current.reviewStep + 1

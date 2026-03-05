@@ -1,17 +1,17 @@
 ---
 id: TASK-9
 title: Replace deterministic onboarding with LLM-driven conversational chat
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-03 00:00'
-updated_date: '2026-03-04 10:05'
+updated_date: '2026-03-04 20:16'
 labels: []
 milestone: m-0
 dependencies:
   - TASK-5
   - TASK-6
 priority: high
-ordinal: 1500
+ordinal: 1000
 ---
 
 ## Description
