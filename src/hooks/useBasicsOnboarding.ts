@@ -1,10 +1,11 @@
 import { useCallback, useReducer, useRef } from 'react'
 import { anthropic } from '@/lib/anthropic'
-import { fetchPageContent } from '@/lib/jina'
-import { extractServices } from '@/services/extractServices'
+import { searchBusiness } from '@/services/searchBusiness'
+import { extractFromUrl } from '@/services/extractFromUrl'
 import { ONBOARDING_SYSTEM_PROMPT, ONBOARDING_TOOLS } from '@/prompts/onboardingAgent'
 import type Anthropic from '@anthropic-ai/sdk'
 import type { BusinessCategory, ChatMessage, LoyaltyGoal, OnboardingStep, Service } from '@/types'
+import type { BusinessSearchResult } from '@/services/searchBusiness'
 
 function makeId() {
   return Math.random().toString(36).slice(2)
@@ -21,6 +22,7 @@ interface BasicsState {
   websiteUrl: string
   services: Service[]
   selectedServiceIds: Set<string>
+  candidateUrls: BusinessSearchResult[]
   goal: LoyaltyGoal | null
   messages: ChatMessage[]
   isTyping: boolean
@@ -33,6 +35,7 @@ const INITIAL_STATE: BasicsState = {
   websiteUrl: '',
   services: [],
   selectedServiceIds: new Set(),
+  candidateUrls: [],
   goal: null,
   messages: [],
   isTyping: false,
@@ -49,6 +52,7 @@ type Action =
   | { type: 'SET_WEBSITE'; url: string }
   | { type: 'SET_SERVICES'; services: Service[] }
   | { type: 'SET_SELECTED_IDS'; ids: Set<string> }
+  | { type: 'SET_CANDIDATE_URLS'; urls: BusinessSearchResult[] }
   | { type: 'SET_GOAL'; goal: LoyaltyGoal }
 
 function reducer(state: BasicsState, action: Action): BasicsState {
@@ -69,6 +73,7 @@ function reducer(state: BasicsState, action: Action): BasicsState {
     case 'SET_WEBSITE': return { ...state, websiteUrl: action.url }
     case 'SET_SERVICES': return { ...state, services: action.services }
     case 'SET_SELECTED_IDS': return { ...state, selectedServiceIds: action.ids }
+    case 'SET_CANDIDATE_URLS': return { ...state, candidateUrls: action.urls }
     case 'SET_GOAL': return { ...state, goal: action.goal }
     default: return state
   }
@@ -90,11 +95,8 @@ export function useBasicsOnboarding(
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // LLM conversation history — separate from display messages
   const llmMessagesRef = useRef<Anthropic.MessageParam[]>([])
-  // Widget to attach to the next end_turn assistant message
   const pendingWidgetRef = useRef<ChatMessage['widget'] | undefined>(undefined)
-  // Set by submit_goal handler; triggers onComplete after the loop finishes
   const shouldNavigateRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
@@ -103,57 +105,64 @@ export function useBasicsOnboarding(
     const input = block.input as Record<string, unknown>
 
     switch (block.name) {
-      case 'submit_business_name': {
-        dispatch({ type: 'SET_NAME', name: input.business_name as string })
-        dispatch({ type: 'SET_STEP', step: 'collect_type' })
-        return 'Business name recorded.'
-      }
-
-      case 'submit_business_type': {
-        dispatch({ type: 'SET_CATEGORY', category: input.business_type as BusinessCategory })
-        dispatch({ type: 'SET_STEP', step: 'collect_website' })
-        return 'Business type recorded.'
-      }
-
-      case 'submit_services': {
-        const websiteUrl = input.website_url as string | undefined
-        const rawServices = input.services as Array<{ name: string; price_cents?: number }> | undefined
-
-        if (websiteUrl) {
-          dispatch({ type: 'SET_WEBSITE', url: websiteUrl })
-          dispatch({ type: 'SET_STEP', step: 'crawling' })
-          try {
-            const pageContent = await fetchPageContent(websiteUrl)
-            dispatch({ type: 'SET_STEP', step: 'extracting' })
-            const extracted = await extractServices(stateRef.current.businessName, pageContent)
-            dispatch({ type: 'SET_SERVICES', services: extracted })
-            dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(extracted.map((s) => s.id)) })
-            dispatch({ type: 'SET_STEP', step: 'confirm_services' })
-            pendingWidgetRef.current = 'service_selector'
-            const names = extracted.map((s) => s.name).join(', ') || 'none found'
-            return `Services extracted from website: ${names}. Showing confirmation UI to user. Do not ask further questions — wait for the user to confirm.`
-          } catch (err) {
-            dispatch({ type: 'SET_STEP', step: 'collect_website' })
-            return `Failed to extract services from website (${err instanceof Error ? err.message : 'unknown error'}). Ask the user to list their services manually.`
+      case 'search_business': {
+        const name = input.name as string
+        dispatch({ type: 'SET_STEP', step: 'searching' })
+        try {
+          const results = await searchBusiness(name)
+          if (results.length === 0) {
+            dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
+            return 'No results found. Ask the user to provide their website URL directly or enter details manually.'
           }
+          dispatch({ type: 'SET_CANDIDATE_URLS', urls: results })
+          dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
+          pendingWidgetRef.current = 'url_selector'
+          const list = results.map((r, i) => `${i + 1}. ${r.title} (${r.url})`).join('\n')
+          return `Found ${results.length} results. Showing URL picker to user:\n${list}\nWait for the user to select one, then call submit_url with the chosen URL.`
+        } catch {
+          dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
+          return 'Search failed. Ask the user to provide their website URL directly or enter details manually.'
         }
+      }
 
-        if (rawServices && rawServices.length > 0) {
-          const services: Service[] = rawServices.map((s, i) => ({
-            id: String(i + 1),
-            name: s.name,
-            price_cents: s.price_cents ?? null,
-            subscription_price_cents: null,
-          }))
-          dispatch({ type: 'SET_SERVICES', services })
-          dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(services.map((s) => s.id)) })
+      case 'submit_url': {
+        const url = input.url as string
+        dispatch({ type: 'SET_WEBSITE', url })
+        dispatch({ type: 'SET_STEP', step: 'extracting' })
+        try {
+          const extracted = await extractFromUrl(url)
+          dispatch({ type: 'SET_NAME', name: extracted.name })
+          dispatch({ type: 'SET_CATEGORY', category: extracted.type })
+          dispatch({ type: 'SET_SERVICES', services: extracted.services })
+          dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(extracted.services.map((s) => s.id)) })
           dispatch({ type: 'SET_STEP', step: 'confirm_services' })
           pendingWidgetRef.current = 'service_selector'
-          const names = services.map((s) => s.name).join(', ')
-          return `Services recorded: ${names}. Showing confirmation UI to user. Do not ask further questions — wait for the user to confirm.`
+          const names = extracted.services.map((s) => s.name).join(', ') || 'none found'
+          return `Extracted: business "${extracted.name}" (${extracted.type}), services: ${names}. Service selector shown to user. Summarize what you found in a friendly message, then wait for the user to confirm services.`
+        } catch (err) {
+          dispatch({ type: 'SET_STEP', step: 'manual_entry' })
+          return `Could not extract data from ${url} (${err instanceof Error ? err.message : 'unknown error'}). Tell the user extraction failed and ask them to enter their business name, type, and top services manually. Then call submit_manual.`
         }
+      }
 
-        return 'No services or URL provided. Ask the user again for their services or website.'
+      case 'submit_manual': {
+        const name = input.business_name as string
+        const type = input.business_type as BusinessCategory
+        const rawServices = input.services as Array<{ name: string; price_cents?: number }> | undefined
+        const services: Service[] = (rawServices ?? []).map((s, i) => ({
+          id: String(i + 1),
+          name: s.name,
+          price_cents: s.price_cents ?? null,
+          subscription_price_cents: null,
+        }))
+        dispatch({ type: 'SET_NAME', name })
+        dispatch({ type: 'SET_CATEGORY', category: type })
+        dispatch({ type: 'SET_SERVICES', services })
+        dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(services.map((s) => s.id)) })
+        dispatch({ type: 'SET_STEP', step: 'confirm_services' })
+        pendingWidgetRef.current = 'service_selector'
+        const names = services.map((s) => s.name).join(', ')
+        return `Recorded: ${name} (${type}), services: ${names}. Service selector shown. Wait for the user to confirm.`
       }
 
       case 'submit_goal': {
@@ -167,9 +176,6 @@ export function useBasicsOnboarding(
     }
   }, [])
 
-  // Core LLM turn: streams Claude's response, handles tool calls in a loop.
-  // userText: visible text to add to conversation (null if continuing from tool results only)
-  // extraMessages: additional messages to prepend before calling Claude (used by confirmServices)
   const runLLMTurn = useCallback(async (
     userText: string | null,
     extraMessages?: Anthropic.MessageParam[],
@@ -186,8 +192,6 @@ export function useBasicsOnboarding(
     dispatch({ type: 'SET_TYPING', value: true })
 
     let currentMessages = newLLMMessages
-
-    // Add placeholder for the first assistant message
     let assistantMsgId = makeId()
     dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: '', timestamp: new Date() } })
 
@@ -223,11 +227,9 @@ export function useBasicsOnboarding(
 
           currentMessages = [...currentMessages, { role: 'user', content: toolResults }]
 
-          // New placeholder for Claude's response to the tool results
           assistantMsgId = makeId()
           dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: '', timestamp: new Date() } })
         } else {
-          // end_turn — attach pending widget to this message
           if (pendingWidgetRef.current) {
             dispatch({ type: 'SET_MESSAGE_WIDGET', id: assistantMsgId, widget: pendingWidgetRef.current })
             pendingWidgetRef.current = undefined
@@ -260,9 +262,11 @@ export function useBasicsOnboarding(
   }, [handleToolCall])
 
   const start = useCallback(() => {
-    // Bootstrap message tells Claude to open the conversation
+    dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
     const name = userName !== 'there' ? userName : null
-    const greeting = name ? `Greet the user by name (${name}) and ask for their business name.` : 'Greet the user and ask for their business name.'
+    const greeting = name
+      ? `Greet the user by name (${name}) and ask for their business name or website URL.`
+      : 'Greet the user and ask for their business name or website URL.'
     runLLMTurn(`[${greeting}]`)
   }, [runLLMTurn, userName])
 
@@ -271,13 +275,17 @@ export function useBasicsOnboarding(
     runLLMTurn(value)
   }, [runLLMTurn])
 
+  const selectUrl = useCallback((url: string) => {
+    dispatch({ type: 'ADD_MESSAGE', message: userMsg(url) })
+    runLLMTurn(`Use this URL: ${url}`)
+  }, [runLLMTurn])
+
   const confirmServices = useCallback((selectedIds: Set<string>) => {
     dispatch({ type: 'SET_SELECTED_IDS', ids: selectedIds })
     const count = selectedIds.size
     dispatch({ type: 'ADD_MESSAGE', message: userMsg(`${count} service${count !== 1 ? 's' : ''} confirmed`) })
     dispatch({ type: 'SET_STEP', step: 'collect_goal' })
     pendingWidgetRef.current = 'goal_selector'
-    // Continue the LLM conversation from the current history, with a user message about services
     runLLMTurn(`Services confirmed (${count} selected). Now ask about the loyalty goal.`)
   }, [runLLMTurn])
 
@@ -297,6 +305,7 @@ export function useBasicsOnboarding(
     state,
     start,
     handleUserInput,
+    selectUrl,
     confirmServices,
     selectGoal,
     selectedServices,

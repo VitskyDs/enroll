@@ -136,7 +136,7 @@ export function useOnboarding(userName = 'there') {
     setStep('greeting')
     await aiReply(`Hello ${userName}, 👋`, 600)
     await aiReply("Let's start with the basics. What's the name of your business?", 400)
-    setStep('collect_name')
+    setStep('collect_url_or_name')
   }, [aiReply, setStep])
 
   // Main input handler
@@ -145,15 +145,15 @@ export function useOnboarding(userName = 'there') {
       addMsg(userMsg(value))
 
       switch (state.step) {
-        case 'collect_name': {
+        case 'collect_url_or_name': {
           dispatch({ type: 'SET_NAME', name: value })
           dispatch({ type: 'SET_CATEGORY', category: 'other' })
-          setStep('collect_website')
+          setStep('manual_entry')
           await aiReply("What's your website? I'll take a quick peek to understand your services.")
           break
         }
 
-        case 'collect_website': {
+        case 'manual_entry': {
           const url = value.toLowerCase() === 'skip' ? '' : value
           dispatch({ type: 'SET_WEBSITE', url })
 

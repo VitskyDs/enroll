@@ -3,19 +3,16 @@ import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import type { ChatMessage, OnboardingStep } from '@/types'
 
-const INPUT_STEPS: OnboardingStep[] = ['collect_name', 'collect_website']
-
 const STEP_PROGRESS: Record<OnboardingStep, number> = {
   greeting: 10,
-  collect_name: 20,
-  collect_type: 30,
-  collect_website: 40,
-  crawling: 50,
-  extracting: 60,
-  confirm_services: 70,
-  collect_goal: 80,
-  generating: 90,
-  saving: 90,
+  collect_url_or_name: 30,
+  searching: 45,
+  extracting: 55,
+  confirm_services: 65,
+  collect_goal: 78,
+  manual_entry: 45,
+  generating: 88,
+  saving: 92,
   reviewing: 100,
   done: 100,
 }
@@ -33,7 +30,7 @@ interface Props {
 }
 
 export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidget, title, subtitle, inputEnabled: inputEnabledProp }: Props) {
-  const inputEnabled = inputEnabledProp ?? INPUT_STEPS.includes(step)
+  const inputEnabled = inputEnabledProp ?? false
   const progress = STEP_PROGRESS[step]
 
   return (

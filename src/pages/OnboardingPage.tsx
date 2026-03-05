@@ -82,6 +82,8 @@ export default function OnboardingPage() {
       onSend={handleUserInput}
       onBack={() => navigate('/')}
       renderWidget={renderWidget}
+      title="Hi there!"
+      subtitle="I'll help you set up your business and create a loyalty program in just a few steps."
     />
   )
 }

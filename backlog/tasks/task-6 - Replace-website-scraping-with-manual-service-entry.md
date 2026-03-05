@@ -1,10 +1,10 @@
 ---
 id: TASK-6
 title: Replace website scraping with manual service entry
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-03 00:00'
-updated_date: '2026-03-04 10:05'
+updated_date: '2026-03-05 10:27'
 labels: []
 milestone: m-0
 dependencies:

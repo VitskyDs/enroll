@@ -67,13 +67,12 @@ export interface LoyaltyProgram {
 
 export type OnboardingStep =
   | 'greeting'
-  | 'collect_name'
-  | 'collect_type'
-  | 'collect_website'
-  | 'crawling'
+  | 'collect_url_or_name'
+  | 'searching'
   | 'extracting'
   | 'confirm_services'
   | 'collect_goal'
+  | 'manual_entry'
   | 'generating'
   | 'saving'
   | 'reviewing'
@@ -85,6 +84,7 @@ export interface ChatMessage {
   content: string
   timestamp: Date
   widget?:
+    | 'url_selector'
     | 'service_selector'
     | 'goal_selector'
     | 'program_overview'
