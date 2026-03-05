@@ -1,16 +1,16 @@
 ---
 id: TASK-5
 title: AI pipeline + persistence
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-02 20:08'
-updated_date: '2026-03-04 18:03'
+updated_date: '2026-03-05 10:03'
 labels: []
 milestone: m-0
 dependencies:
   - TASK-1
 priority: high
-ordinal: 750
+ordinal: 5000
 ---
 
 ## Description

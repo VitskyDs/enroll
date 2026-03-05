@@ -10,7 +10,7 @@ milestone: m-0
 dependencies:
   - TASK-5
 priority: high
-ordinal: 6000
+ordinal: 1000
 ---
 
 ## Description
