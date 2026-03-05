@@ -1,3 +1,4 @@
+import { PROGRAM_GUIDELINES } from './programGuidelines'
 import type { BusinessCategory, LoyaltyGoal, Service } from '@/types'
 
 const GOAL_DESCRIPTIONS: Record<LoyaltyGoal, string> = {
@@ -33,6 +34,10 @@ export function buildGenerateProgramPrompt(
 
   return `You are a loyalty program strategist specializing in service businesses.
 
+${PROGRAM_GUIDELINES}
+
+---
+
 Business: ${businessName}
 Type: ${businessCategory}
 Primary goal: ${goalDesc}
@@ -40,7 +45,7 @@ Primary goal: ${goalDesc}
 Services offered:
 ${servicesText}
 ${examplesSection}
-Generate a tailored loyalty program for this business. Return JSON only — no markdown, no code fences, no explanation.
+Generate a tailored loyalty program for this business. Return JSON only — no markdown, no code fences, no explanation. All generated content must be professional, appropriate for business use, and free from offensive, harmful, or inappropriate language.
 
 Use this exact structure:
 {

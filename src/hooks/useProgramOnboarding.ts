@@ -1,6 +1,6 @@
 import { useCallback, useReducer, useRef } from 'react'
-import { saveToSupabase } from '@/services/saveToSupabase'
 import { generateProgram } from '@/services/generateProgram'
+import { validateInput } from '@/lib/validateProgram'
 import type {
   BusinessCategory,
   ChatMessage,
@@ -73,7 +73,7 @@ interface Props {
   goal?: LoyaltyGoal
 }
 
-export function useProgramOnboarding({ businessName, businessCategory, websiteUrl, services, goal: goalProp }: Props) {
+export function useProgramOnboarding({ businessName, businessCategory, services, goal: goalProp }: Props) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const stateRef = useRef(state)
   stateRef.current = state
@@ -107,8 +107,15 @@ export function useProgramOnboarding({ businessName, businessCategory, websiteUr
         addMsg(userMsg(labels[goal]))
       }
       dispatch({ type: 'SET_GOAL', goal })
-      setStep('generating')
 
+      // Input validation
+      const inputCheck = validateInput(businessName, businessCategory, services, goal)
+      if (!inputCheck.valid) {
+        addMsg(assistantMsg(`Sorry, I can't generate a program: ${inputCheck.error}`))
+        return
+      }
+
+      setStep('generating')
       const statusMsgId = makeId()
       addMsg({ id: statusMsgId, role: 'assistant', content: 'Designing your loyalty program…', timestamp: new Date() })
 
@@ -119,44 +126,19 @@ export function useProgramOnboarding({ businessName, businessCategory, websiteUr
         dispatch({
           type: 'UPDATE_MESSAGE',
           id: statusMsgId,
-          content: `Could not generate the program (${err instanceof Error ? err.message : 'unknown error'}). Please try again.`,
+          content: `Could not generate the program: ${err instanceof Error ? err.message : 'unknown error'}. Please try again.`,
         })
         setTyping(false)
         return
       }
 
-      // Save to Supabase
-      dispatch({ type: 'UPDATE_MESSAGE', id: statusMsgId, content: 'Almost there — saving your program…' })
-      let saveError = false
-      try {
-        const { business_id, program_id } = await saveToSupabase(
-          businessName,
-          businessCategory,
-          websiteUrl,
-          goal,
-          services,
-          program,
-        )
-        program = { ...program, id: program_id, business_id }
-      } catch (err) {
-        console.error('Supabase save failed:', err)
-        saveError = true
-        dispatch({
-          type: 'UPDATE_MESSAGE',
-          id: statusMsgId,
-          content: `Warning: your program was generated but could not be saved (${err instanceof Error ? err.message : 'unknown error'}). You can still review it below.`,
-        })
-      }
-
       dispatch({ type: 'SET_PROGRAM', program })
-      if (!saveError) {
-        dispatch({ type: 'UPDATE_MESSAGE', id: statusMsgId, content: "Here's what I put together for you." })
-      }
+      dispatch({ type: 'UPDATE_MESSAGE', id: statusMsgId, content: "Here's what I put together for you." })
       addMsg(assistantMsg('', 'program_overview'))
       dispatch({ type: 'SET_REVIEW_STEP', step: 0 })
       setStep('reviewing')
     },
-    [addMsg, setStep, goalProp, businessName, businessCategory, websiteUrl, services],
+    [addMsg, setStep, goalProp, businessName, businessCategory, services],
   )
 
   const start = useCallback(async () => {

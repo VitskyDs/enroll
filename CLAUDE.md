@@ -27,6 +27,11 @@ In scope: onboarding flow, AI generation, program preview, basic regeneration.
 
 Out of scope: customer-facing tracking, POS integrations, payments, analytics, mobile app.
 
+## Git workflow
+
+- **Never use worktrees.** Always work on a regular git branch checked out in the main repo.
+- Create a branch, make changes, commit, and push. The user will create and merge PRs via GitHub.
+
 ## Task workflow
 
 New tasks usually come from [backlog/backlog.md](backlog/backlog.md). Check there for the next task to work on.
