@@ -1,10 +1,10 @@
 ---
 id: TASK-12
 title: Chat processing spinner
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-04'
-updated_date: '2026-03-05 09:29'
+updated_date: '2026-03-05 15:31'
 labels: []
 milestone: m-0
 dependencies: []
