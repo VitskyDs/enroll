@@ -193,7 +193,7 @@ export function useBasicsOnboarding(
 
     let currentMessages = newLLMMessages
     let assistantMsgId = makeId()
-    dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: '', timestamp: new Date() } })
+    let hasAddedMessage = false
 
     try {
       while (true) {
@@ -208,14 +208,23 @@ export function useBasicsOnboarding(
         })
 
         stream.on('text', (delta) => {
-          accumulated += delta
-          dispatch({ type: 'UPDATE_MESSAGE', id: assistantMsgId, content: accumulated })
+          if (!hasAddedMessage) {
+            dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: delta, timestamp: new Date() } })
+            dispatch({ type: 'SET_TYPING', value: false })
+            hasAddedMessage = true
+            accumulated = delta
+          } else {
+            accumulated += delta
+            dispatch({ type: 'UPDATE_MESSAGE', id: assistantMsgId, content: accumulated })
+          }
         })
 
         const finalMessage = await stream.finalMessage()
         currentMessages = [...currentMessages, { role: 'assistant', content: finalMessage.content }]
 
         if (finalMessage.stop_reason === 'tool_use') {
+          dispatch({ type: 'SET_TYPING', value: true })
+
           const toolResults: Anthropic.ToolResultBlockParam[] = []
 
           for (const block of finalMessage.content) {
@@ -228,7 +237,7 @@ export function useBasicsOnboarding(
           currentMessages = [...currentMessages, { role: 'user', content: toolResults }]
 
           assistantMsgId = makeId()
-          dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: '', timestamp: new Date() } })
+          hasAddedMessage = false
         } else {
           if (pendingWidgetRef.current) {
             dispatch({ type: 'SET_MESSAGE_WIDGET', id: assistantMsgId, widget: pendingWidgetRef.current })
@@ -238,11 +247,12 @@ export function useBasicsOnboarding(
         }
       }
     } catch (err) {
-      dispatch({
-        type: 'UPDATE_MESSAGE',
-        id: assistantMsgId,
-        content: `Something went wrong: ${err instanceof Error ? err.message : 'unknown error'}. Please try again.`,
-      })
+      const errorContent = `Something went wrong: ${err instanceof Error ? err.message : 'unknown error'}. Please try again.`
+      if (!hasAddedMessage) {
+        dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: errorContent, timestamp: new Date() } })
+      } else {
+        dispatch({ type: 'UPDATE_MESSAGE', id: assistantMsgId, content: errorContent })
+      }
     }
 
     llmMessagesRef.current = currentMessages
