@@ -1,10 +1,10 @@
 ---
 id: TASK-13
 title: Deploy to Vercel
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-04 00:00'
-updated_date: '2026-03-05 09:29'
+updated_date: '2026-03-05 22:19'
 labels: []
 milestone: m-0
 dependencies:

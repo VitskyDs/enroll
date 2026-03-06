@@ -1,10 +1,10 @@
 ---
 id: TASK-14
 title: Add guardrails to loyalty program creation
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-04 00:00'
-updated_date: '2026-03-05 17:04'
+updated_date: '2026-03-05 20:28'
 labels: []
 dependencies:
   - TASK-9
