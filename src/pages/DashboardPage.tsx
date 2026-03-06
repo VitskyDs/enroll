@@ -96,7 +96,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <BottomNav />
+      <BottomNav active="home" />
     </div>
   )
 }
