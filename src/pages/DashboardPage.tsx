@@ -1,16 +1,7 @@
 import { useEffect, useState } from 'react'
-import {
-  Bell,
-  Menu,
-  Sparkles,
-  CircleDashed,
-  ChevronRight,
-  Search,
-  House,
-  Send,
-  Award,
-} from 'lucide-react'
+import { Bell, Menu, Sparkles, CircleDashed, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { BottomNav } from '@/components/BottomNav'
 
 const CHECKLIST_ITEMS = [
   { label: 'Invite your first customers', description: 'Share your loyalty link' },
@@ -111,44 +102,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom navbar */}
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-white flex items-start justify-center gap-2 px-4 pt-3"
-        style={{
-          paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
-          boxShadow: '0 -1px 3px rgba(0,0,0,0.1), 0 -1px 2px rgba(0,0,0,0.06)',
-        }}
-      >
-        {/* Left section: Search only */}
-        <div className="bg-white rounded-full p-1 flex items-center shrink-0">
-          <button className="flex items-center justify-center w-12 h-12 rounded-full">
-            <Search className="w-6 h-6 text-zinc-500" />
-          </button>
-        </div>
-
-        {/* Middle section: Home (active) | Send | Loyalty | Menu */}
-        <div className="flex-1 flex items-center justify-between bg-white rounded-full p-1">
-          <button className="flex items-center justify-center w-12 h-12 rounded-full bg-zinc-100">
-            <House className="w-6 h-6 text-zinc-900" />
-          </button>
-          <button className="flex items-center justify-center w-12 h-12 rounded-full">
-            <Send className="w-6 h-6 text-zinc-500" />
-          </button>
-          <button className="flex items-center justify-center w-12 h-12 rounded-full">
-            <Award className="w-6 h-6 text-zinc-500" />
-          </button>
-          <button className="flex items-center justify-center w-12 h-12 rounded-full">
-            <Menu className="w-6 h-6 text-zinc-500" />
-          </button>
-        </div>
-
-        {/* Right section: Sparkles only */}
-        <div className="bg-white rounded-full p-1 flex items-center shrink-0">
-          <button className="flex items-center justify-center w-12 h-12 rounded-full">
-            <Sparkles className="w-6 h-6 text-zinc-500" />
-          </button>
-        </div>
-      </div>
+      <BottomNav />
     </div>
   )
 }
