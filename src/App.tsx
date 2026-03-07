@@ -6,6 +6,8 @@ import ConfirmPage from '@/pages/onboarding/ConfirmPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ProgramPage from '@/pages/ProgramPage'
 import ProgramFeaturePage from '@/pages/ProgramFeaturePage'
+import ServicesPage from '@/pages/ServicesPage'
+import ServiceFormPage from '@/pages/ServiceFormPage'
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/program" element={<ProgramPage />} />
       <Route path="/program/:feature" element={<ProgramFeaturePage />} />
+      <Route path="/services" element={<ServicesPage />} />
+      <Route path="/services/:id" element={<ServiceFormPage />} />
     </Routes>
   )
 }
