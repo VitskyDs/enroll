@@ -64,6 +64,8 @@ export default function ServiceFormPage() {
   const isCreate = id === 'new'
 
   const [form, setForm] = useState<ServiceForm>(DEFAULT_FORM)
+  const [originalForm, setOriginalForm] = useState<ServiceForm>(DEFAULT_FORM)
+  const [isDirty, setIsDirty] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(!isCreate)
   const [isSaving, setIsSaving] = useState(false)
@@ -97,7 +99,7 @@ export default function ServiceFormPage() {
         .single()
 
       if (!error && data) {
-        setForm({
+        const loaded: ServiceForm = {
           name: data.name ?? '',
           status: data.status === 'draft' ? 'draft' : data.status === 'inactive' ? 'inactive' : 'active',
           description: data.description ?? '',
@@ -106,7 +108,9 @@ export default function ServiceFormPage() {
           subscriptionPrice: data.subscription_price != null ? String(data.subscription_price) : '',
           durationMinutes: data.duration_minutes != null ? String(data.duration_minutes) : '',
           imageUrl: data.image_url ?? null,
-        })
+        }
+        setForm(loaded)
+        setOriginalForm(loaded)
         if (data.image_url) {
           const parts = data.image_url.split('/')
           setImageFileName(parts[parts.length - 1] ?? null)
@@ -120,21 +124,17 @@ export default function ServiceFormPage() {
 
   function setField<K extends keyof ServiceForm>(key: K, value: ServiceForm[K]) {
     setForm(prev => ({ ...prev, [key]: value }))
+    if (!isCreate) setIsDirty(true)
   }
 
-  async function handleStatusChange(newStatus: 'active' | 'draft' | 'inactive') {
-    setField('status', newStatus)
-    setStatusOpen(false)
+  function handleCancel() {
+    setForm(originalForm)
+    setIsDirty(false)
+  }
 
-    if (!isCreate && id) {
-      const { error, data } = await supabase
-        .from('services')
-        .update({ status: newStatus })
-        .eq('id', id)
-        .select()
-      console.log('[ServiceForm] status update:', { newStatus, id, data, error })
-      if (error) toast.error('Failed to update status')
-    }
+  function handleStatusChange(newStatus: 'active' | 'draft' | 'inactive') {
+    setStatusOpen(false)
+    setField('status', newStatus)
   }
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -214,6 +214,8 @@ export default function ServiceFormPage() {
         toast.error('Failed to save service')
       } else {
         toast.success('Service updated')
+        setOriginalForm(form)
+        setIsDirty(false)
         navigate('/services')
       }
     }
@@ -281,46 +283,50 @@ export default function ServiceFormPage() {
     )
   }
 
+  // Header variants
+  const header = isCreate || (isDirty) ? (
+    // Create mode or edit-with-changes: Cancel + Save
+    <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+      <button
+        className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
+        onClick={isCreate ? () => navigate(-1) : handleCancel}
+      >
+        Cancel
+      </button>
+      <button
+        className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
+        onClick={handleSave}
+        disabled={isSaving}
+      >
+        {isSaving ? 'Saving…' : 'Save'}
+      </button>
+    </div>
+  ) : (
+    // Edit mode, no changes: back + share + ellipsis
+    <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+      <button
+        className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+        onClick={() => navigate(-1)}
+      >
+        <ChevronLeft className="w-4 h-4 text-zinc-700" />
+      </button>
+      <div className="flex items-center gap-2">
+        <button className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg">
+          <Share2 className="w-4 h-4 text-zinc-700" />
+        </button>
+        <button
+          className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+          onClick={() => setActionSheetOpen(true)}
+        >
+          <Ellipsis className="w-4 h-4 text-zinc-700" />
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      {isCreate ? (
-        <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
-          <button
-            className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
-            onClick={() => navigate(-1)}
-          >
-            Cancel
-          </button>
-          <button
-            className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
-          <button
-            className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
-            onClick={() => navigate(-1)}
-          >
-            <ChevronLeft className="w-4 h-4 text-zinc-700" />
-          </button>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg">
-              <Share2 className="w-4 h-4 text-zinc-700" />
-            </button>
-            <button
-              className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
-              onClick={() => setActionSheetOpen(true)}
-            >
-              <Ellipsis className="w-4 h-4 text-zinc-700" />
-            </button>
-          </div>
-        </div>
-      )}
+      {header}
 
       {/* Form body */}
       <div className="flex-1 px-4 flex flex-col gap-6 pt-6 pb-32">
@@ -486,17 +492,6 @@ export default function ServiceFormPage() {
             <span className="pr-3 pl-1 text-sm text-zinc-400 shrink-0">Minutes</span>
           </div>
         </div>
-
-        {/* Save button (edit mode only) */}
-        {!isCreate && (
-          <button
-            className="h-11 bg-zinc-950 text-white rounded-xl text-sm font-medium disabled:opacity-50"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Saving…' : 'Save changes'}
-          </button>
-        )}
 
       </div>
 
