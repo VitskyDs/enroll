@@ -19,7 +19,7 @@ export interface Service {
   description?: string
   duration_minutes?: number | null
   category?: string
-  status?: 'active' | 'draft'
+  status?: 'active' | 'draft' | 'inactive'
   image_url?: string | null
   business_id?: string
   created_at?: string

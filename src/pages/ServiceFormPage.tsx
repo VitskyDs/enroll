@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Share2, Ellipsis, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { BottomNav } from '@/components/BottomNav'
 import { toast } from 'sonner'
 import {
@@ -11,10 +11,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
-import { ActionSheet } from '@/components/resource/ActionSheet'
 
 const ACTIVE_COLOR = '#009689'
 const DRAFT_COLOR = '#a3a3a3'
+const INACTIVE_COLOR = '#71717a'
 
 const CATEGORIES = [
   'Hair',
@@ -31,7 +31,7 @@ const CATEGORIES = [
 
 interface ServiceForm {
   name: string
-  status: 'active' | 'draft'
+  status: 'active' | 'draft' | 'inactive'
   description: string
   category: string
   price: string
@@ -51,9 +51,10 @@ const DEFAULT_FORM: ServiceForm = {
   imageUrl: null,
 }
 
-const STATUS_OPTIONS: { value: 'active' | 'draft'; label: string; color: string }[] = [
+const STATUS_OPTIONS: { value: 'active' | 'draft' | 'inactive'; label: string; color: string }[] = [
   { value: 'active', label: 'Active', color: ACTIVE_COLOR },
   { value: 'draft', label: 'Draft', color: DRAFT_COLOR },
+  { value: 'inactive', label: 'Inactive', color: INACTIVE_COLOR },
 ]
 
 export default function ServiceFormPage() {
@@ -67,7 +68,6 @@ export default function ServiceFormPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [imageFileName, setImageFileName] = useState<string | null>(null)
-  const [actionSheetOpen, setActionSheetOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -97,7 +97,7 @@ export default function ServiceFormPage() {
       if (!error && data) {
         setForm({
           name: data.name ?? '',
-          status: data.status === 'draft' ? 'draft' : 'active',
+          status: data.status === 'draft' ? 'draft' : data.status === 'inactive' ? 'inactive' : 'active',
           description: data.description ?? '',
           category: data.category ?? '',
           price: data.price != null ? String(data.price) : '',
@@ -200,33 +200,6 @@ export default function ServiceFormPage() {
     setIsSaving(false)
   }
 
-  async function handleDelete() {
-    const { error } = await supabase.from('services').delete().eq('id', id!)
-    if (error) {
-      toast.error('Failed to delete service')
-    } else {
-      toast.success('Service deleted')
-      navigate('/services')
-    }
-  }
-
-  async function handleDuplicate() {
-    if (!businessId || isCreate) return
-    const { data, error } = await supabase.from('services').select('*').eq('id', id!).single()
-    if (!error && data) {
-      const { id: _id, created_at: _ca, ...rest } = data
-      const { error: insertError } = await supabase
-        .from('services')
-        .insert({ ...rest, name: `${rest.name} (copy)`, source: 'manual' })
-      if (insertError) {
-        toast.error('Failed to duplicate service')
-      } else {
-        toast.success('Service duplicated')
-        navigate('/services')
-      }
-    }
-  }
-
   const currentStatus = STATUS_OPTIONS.find(o => o.value === form.status) ?? STATUS_OPTIONS[0]
 
   if (isLoading) {
@@ -240,51 +213,24 @@ export default function ServiceFormPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 pt-14 pb-4 bg-white">
-        {isCreate ? (
-          <>
-            <button
-              className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
-              onClick={() => navigate(-1)}
-            >
-              Cancel
-            </button>
-            <span className="flex-1" />
-            <button
-              className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving…' : 'Save'}
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className="w-9 h-9 flex items-center justify-center bg-zinc-100 rounded-lg shrink-0 disabled:opacity-50"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              <ChevronLeft className="w-4 h-4 text-zinc-900" />
-            </button>
-            <span className="flex-1" />
-            <div className="flex items-center gap-2">
-              <button className="w-9 h-9 flex items-center justify-center bg-zinc-100 rounded-lg shrink-0">
-                <Share2 className="w-4 h-4 text-zinc-700" />
-              </button>
-              <button
-                className="w-9 h-9 flex items-center justify-center bg-zinc-100 rounded-lg shrink-0"
-                onClick={() => setActionSheetOpen(true)}
-              >
-                <Ellipsis className="w-4 h-4 text-zinc-700" />
-              </button>
-            </div>
-          </>
-        )}
+      <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+        <button
+          className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
+          onClick={() => navigate(-1)}
+        >
+          Cancel
+        </button>
+        <button
+          className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
+          onClick={handleSave}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Saving…' : 'Save'}
+        </button>
       </div>
 
       {/* Form body */}
-      <div className={`flex-1 px-4 flex flex-col gap-6 pt-6 ${isCreate ? 'pb-12' : 'pb-32'}`}>
+      <div className="flex-1 px-4 flex flex-col gap-6 pt-6 pb-32">
 
         {/* Service status */}
         <div className="flex flex-col gap-1">
@@ -450,18 +396,7 @@ export default function ServiceFormPage() {
 
       </div>
 
-      {/* Bottom nav (edit mode only) */}
-      {!isCreate && <BottomNav active="services" />}
-
-      {/* Action sheet (edit mode only) */}
-      {!isCreate && (
-        <ActionSheet
-          open={actionSheetOpen}
-          onClose={() => setActionSheetOpen(false)}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-        />
-      )}
+      <BottomNav active="services" />
     </div>
   )
 }

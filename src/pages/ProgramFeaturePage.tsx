@@ -1,6 +1,7 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import type { LoyaltyProgram, EarnRule, RewardTier, BonusRule } from '@/types'
+import { BottomNav } from '@/components/BottomNav'
 
 type FeatureKey = 'currency' | 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'brand-voice'
 
@@ -103,7 +104,7 @@ export default function ProgramFeaturePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <div className="flex-1 flex flex-col gap-6 px-4 pt-16 pb-10">
+      <div className="flex-1 flex flex-col gap-6 px-4 pt-16 pb-32">
 
         {/* Heading */}
         <div className="flex flex-col gap-2">
@@ -123,6 +124,7 @@ export default function ProgramFeaturePage() {
           <FeatureCards featureKey={featureKey} program={program} />
         </div>
       </div>
+      <BottomNav active="program" />
     </div>
   )
 }
