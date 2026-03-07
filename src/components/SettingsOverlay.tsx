@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
   House,
@@ -67,7 +68,7 @@ export function SettingsOverlay({ open, onClose, onInvite }: Props) {
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-40 flex flex-col bg-[#fafafa]"
       style={{
@@ -103,6 +104,7 @@ export function SettingsOverlay({ open, onClose, onInvite }: Props) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
