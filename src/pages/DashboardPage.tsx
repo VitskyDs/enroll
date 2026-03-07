@@ -3,6 +3,7 @@ import { Bell, Menu, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import { Row } from '@/components/ChecklistRow'
+import { InviteDrawer } from '@/components/InviteDrawer'
 
 const CHECKLIST_ITEMS = [
   { label: 'Invite your first customers', description: 'Share your loyalty link' },
@@ -14,6 +15,7 @@ const CHECKLIST_ITEMS = [
 
 export default function DashboardPage() {
   const [businessName, setBusinessName] = useState<string>('Your business')
+  const [inviteOpen, setInviteOpen] = useState(false)
 
   useEffect(() => {
     supabase
@@ -62,7 +64,10 @@ export default function DashboardPage() {
               Start inviting customers and grow your members.
             </p>
           </div>
-          <button className="w-full h-10 bg-zinc-900 text-white text-sm font-medium rounded-lg">
+          <button
+            onClick={() => setInviteOpen(true)}
+            className="w-full h-10 bg-zinc-900 text-white text-sm font-medium rounded-lg"
+          >
             Invite customers
           </button>
         </div>
@@ -96,7 +101,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <BottomNav active="home" />
+      <BottomNav active="home" onShare={() => setInviteOpen(true)} />
+
+      <InviteDrawer
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        businessName={businessName}
+      />
     </div>
   )
 }
