@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Share2, Ellipsis } from 'lucide-react'
 import { BottomNav } from '@/components/BottomNav'
+import { ActionSheet } from '@/components/resource/ActionSheet'
 import { toast } from 'sonner'
 import {
   Select,
@@ -69,6 +70,7 @@ export default function ServiceFormPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [imageFileName, setImageFileName] = useState<string | null>(null)
   const [statusOpen, setStatusOpen] = useState(false)
+  const [actionSheetOpen, setActionSheetOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -118,6 +120,19 @@ export default function ServiceFormPage() {
 
   function setField<K extends keyof ServiceForm>(key: K, value: ServiceForm[K]) {
     setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  async function handleStatusChange(newStatus: 'active' | 'draft' | 'inactive') {
+    setField('status', newStatus)
+    setStatusOpen(false)
+
+    if (!isCreate && id) {
+      const { error } = await supabase
+        .from('services')
+        .update({ status: newStatus })
+        .eq('id', id)
+      if (error) toast.error('Failed to update status')
+    }
   }
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -200,6 +215,53 @@ export default function ServiceFormPage() {
     setIsSaving(false)
   }
 
+  async function handleDelete() {
+    if (!window.confirm('Delete this service?')) return
+
+    const { error } = await supabase
+      .from('services')
+      .delete()
+      .eq('id', id!)
+
+    if (error) {
+      toast.error('Failed to delete service')
+    } else {
+      toast.success('Service deleted')
+      navigate('/services')
+    }
+  }
+
+  async function handleDuplicate() {
+    const priceVal = form.price ? parseFloat(form.price) : null
+    const subPriceVal = form.subscriptionPrice ? parseFloat(form.subscriptionPrice) : null
+    const durationVal = form.durationMinutes ? parseInt(form.durationMinutes, 10) : null
+
+    if (!businessId) return
+
+    const { error } = await supabase
+      .from('services')
+      .insert({
+        business_id: businessId,
+        source: 'manual',
+        name: `${form.name.trim()} (copy)`,
+        status: form.status,
+        description: form.description.trim() || null,
+        category: form.category || null,
+        price: priceVal,
+        price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
+        subscription_price: subPriceVal,
+        duration_minutes: durationVal,
+        image_url: form.imageUrl,
+      })
+
+    if (error) {
+      toast.error('Failed to duplicate service')
+    } else {
+      toast.success('Service duplicated')
+      navigate('/services')
+    }
+  }
+
   const currentStatus = STATUS_OPTIONS.find(o => o.value === form.status) ?? STATUS_OPTIONS[0]
 
   if (isLoading) {
@@ -213,21 +275,43 @@ export default function ServiceFormPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
-        <button
-          className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
-          onClick={() => navigate(-1)}
-        >
-          Cancel
-        </button>
-        <button
-          className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
-          onClick={handleSave}
-          disabled={isSaving}
-        >
-          {isSaving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+      {isCreate ? (
+        <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+          <button
+            className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
+            onClick={() => navigate(-1)}
+          >
+            Cancel
+          </button>
+          <button
+            className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+          <button
+            className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+            onClick={() => navigate(-1)}
+          >
+            <ChevronLeft className="w-4 h-4 text-zinc-700" />
+          </button>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg">
+              <Share2 className="w-4 h-4 text-zinc-700" />
+            </button>
+            <button
+              className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+              onClick={() => setActionSheetOpen(true)}
+            >
+              <Ellipsis className="w-4 h-4 text-zinc-700" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Form body */}
       <div className="flex-1 px-4 flex flex-col gap-6 pt-6 pb-32">
@@ -256,7 +340,7 @@ export default function ServiceFormPage() {
                     <button
                       key={opt.value}
                       className="flex items-center gap-2 w-full px-3 py-2.5 hover:bg-zinc-50 transition-colors"
-                      onClick={() => { setField('status', opt.value); setStatusOpen(false) }}
+                      onClick={() => handleStatusChange(opt.value)}
                     >
                       <span
                         className="w-4 h-4 rounded shrink-0"
@@ -394,9 +478,30 @@ export default function ServiceFormPage() {
           </div>
         </div>
 
+        {/* Save button (edit mode only) */}
+        {!isCreate && (
+          <button
+            className="h-11 bg-zinc-950 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving…' : 'Save changes'}
+          </button>
+        )}
+
       </div>
 
       <BottomNav active="services" />
+
+      {/* Action sheet (edit mode only) */}
+      {!isCreate && (
+        <ActionSheet
+          open={actionSheetOpen}
+          onClose={() => setActionSheetOpen(false)}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   )
 }
