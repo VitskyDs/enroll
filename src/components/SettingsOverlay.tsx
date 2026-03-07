@@ -40,7 +40,7 @@ export function SettingsOverlay({ open, onClose }: Props) {
       setMounted(true)
     } else {
       setVisible(false)
-      const t = setTimeout(() => setMounted(false), 500)
+      const t = setTimeout(() => setMounted(false), 300)
       return () => clearTimeout(t)
     }
   }, [open])
@@ -69,7 +69,7 @@ export function SettingsOverlay({ open, onClose }: Props) {
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(8px)',
-        transition: 'opacity 500ms ease-out, transform 500ms ease-out',
+        transition: 'opacity 300ms ease-out, transform 300ms ease-out',
       }}
     >
       {/* Header */}
