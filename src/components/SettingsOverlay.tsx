@@ -34,20 +34,25 @@ export function SettingsOverlay({ open, onClose }: Props) {
   const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(false)
 
+  // Step 1: mount/unmount the element
   useEffect(() => {
     if (open) {
       setMounted(true)
-      // Two rAFs: first lets the DOM paint the initial (hidden) state,
-      // second triggers the transition into the visible state.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setVisible(true))
-      })
     } else {
       setVisible(false)
-      const t = setTimeout(() => setMounted(false), 300)
+      const t = setTimeout(() => setMounted(false), 500)
       return () => clearTimeout(t)
     }
   }, [open])
+
+  // Step 2: trigger the enter transition after the element is in the DOM.
+  // A small timeout is more reliable than rAF — it guarantees the browser
+  // has painted the initial (hidden) state before we flip visible → true.
+  useEffect(() => {
+    if (!mounted || !open) return
+    const t = setTimeout(() => setVisible(true), 16)
+    return () => clearTimeout(t)
+  }, [mounted, open])
 
   if (!mounted) return null
 
@@ -64,7 +69,7 @@ export function SettingsOverlay({ open, onClose }: Props) {
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(8px)',
-        transition: 'opacity 300ms ease-out, transform 300ms ease-out',
+        transition: 'opacity 500ms ease-out, transform 500ms ease-out',
       }}
     >
       {/* Header */}
