@@ -1,9 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Share2, Ellipsis, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { supabase } from '@/lib/supabase'
 import { ActionSheet } from '@/components/resource/ActionSheet'
+
+const ACTIVE_COLOR = '#009689'
+const DRAFT_COLOR = '#a3a3a3'
+
+const CATEGORIES = [
+  'Hair',
+  'Nails',
+  'Skin',
+  'Massage',
+  'Waxing',
+  'Lashes & brows',
+  'Makeup',
+  'Wellness',
+  'Fitness',
+  'Other',
+]
 
 interface ServiceForm {
   name: string
@@ -28,8 +51,8 @@ const DEFAULT_FORM: ServiceForm = {
 }
 
 const STATUS_OPTIONS: { value: 'active' | 'draft'; label: string; color: string }[] = [
-  { value: 'active', label: 'Active', color: '#009689' },
-  { value: 'draft', label: 'Draft', color: '#a3a3a3' },
+  { value: 'active', label: 'Active', color: ACTIVE_COLOR },
+  { value: 'draft', label: 'Draft', color: DRAFT_COLOR },
 ]
 
 export default function ServiceFormPage() {
@@ -41,10 +64,12 @@ export default function ServiceFormPage() {
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(!isCreate)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [imageFileName, setImageFileName] = useState<string | null>(null)
   const [actionSheetOpen, setActionSheetOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Load business ID
   useEffect(() => {
     supabase
       .from('businesses')
@@ -57,7 +82,6 @@ export default function ServiceFormPage() {
       })
   }, [])
 
-  // Load service for edit mode
   useEffect(() => {
     if (isCreate || !id) return
 
@@ -80,6 +104,10 @@ export default function ServiceFormPage() {
           durationMinutes: data.duration_minutes != null ? String(data.duration_minutes) : '',
           imageUrl: data.image_url ?? null,
         })
+        if (data.image_url) {
+          const parts = data.image_url.split('/')
+          setImageFileName(parts[parts.length - 1] ?? null)
+        }
       }
       setIsLoading(false)
     }
@@ -89,6 +117,33 @@ export default function ServiceFormPage() {
 
   function setField<K extends keyof ServiceForm>(key: K, value: ServiceForm[K]) {
     setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setImageFileName(file.name)
+
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+    const { data, error } = await supabase.storage
+      .from('service-images')
+      .upload(path, file, { upsert: true })
+
+    if (error) {
+      toast.error('Failed to upload image')
+      setImageFileName(null)
+    } else {
+      const { data: urlData } = supabase.storage
+        .from('service-images')
+        .getPublicUrl(data.path)
+      setField('imageUrl', urlData.publicUrl)
+    }
+
+    setIsUploading(false)
   }
 
   async function handleSave() {
@@ -107,7 +162,7 @@ export default function ServiceFormPage() {
       name: form.name.trim(),
       status: form.status,
       description: form.description.trim() || null,
-      category: form.category.trim() || null,
+      category: form.category || null,
       price: priceVal,
       price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
       subscription_price: subPriceVal,
@@ -116,10 +171,7 @@ export default function ServiceFormPage() {
     }
 
     if (isCreate) {
-      if (!businessId) {
-        setIsSaving(false)
-        return
-      }
+      if (!businessId) { setIsSaving(false); return }
       const { error } = await supabase
         .from('services')
         .insert({ ...payload, business_id: businessId, source: 'manual' })
@@ -148,11 +200,7 @@ export default function ServiceFormPage() {
   }
 
   async function handleDelete() {
-    const { error } = await supabase
-      .from('services')
-      .delete()
-      .eq('id', id!)
-
+    const { error } = await supabase.from('services').delete().eq('id', id!)
     if (error) {
       toast.error('Failed to delete service')
     } else {
@@ -163,19 +211,12 @@ export default function ServiceFormPage() {
 
   async function handleDuplicate() {
     if (!businessId || isCreate) return
-
-    const { data, error } = await supabase
-      .from('services')
-      .select('*')
-      .eq('id', id!)
-      .single()
-
+    const { data, error } = await supabase.from('services').select('*').eq('id', id!).single()
     if (!error && data) {
       const { id: _id, created_at: _ca, ...rest } = data
       const { error: insertError } = await supabase
         .from('services')
         .insert({ ...rest, name: `${rest.name} (copy)`, source: 'manual' })
-
       if (insertError) {
         toast.error('Failed to duplicate service')
       } else {
@@ -202,14 +243,14 @@ export default function ServiceFormPage() {
         {isCreate ? (
           <>
             <button
-              className="h-9 px-3 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-900"
+              className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
               onClick={() => navigate(-1)}
             >
               Cancel
             </button>
-            <p className="flex-1 text-center text-sm font-semibold text-zinc-950">New service</p>
+            <span className="flex-1" />
             <button
-              className="h-9 px-3 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-900 disabled:opacity-50"
+              className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
               onClick={handleSave}
               disabled={isSaving}
             >
@@ -241,21 +282,21 @@ export default function ServiceFormPage() {
       </div>
 
       {/* Form body */}
-      <div className="flex-1 px-4 pb-12 flex flex-col gap-6">
+      <div className="flex-1 px-4 pb-12 flex flex-col gap-6 pt-6">
 
-        {/* Status */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Status</p>
+        {/* Service status */}
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Service status</p>
           <div className="relative">
             <button
-              className="flex items-center gap-2 w-full h-11 px-3 border border-zinc-200 rounded-lg bg-white text-left"
+              className="flex items-center gap-2 w-full h-9 px-3 border border-[#d4d4d4] rounded-lg bg-white text-left shadow-[0_1px_2px_rgba(0,0,0,0)]"
               onClick={() => setStatusOpen(prev => !prev)}
             >
               <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
+                className="w-4 h-4 rounded shrink-0"
                 style={{ backgroundColor: currentStatus.color }}
               />
-              <span className="flex-1 text-sm text-zinc-900">{currentStatus.label}</span>
+              <span className="flex-1 text-sm text-zinc-950">{currentStatus.label}</span>
               <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" />
             </button>
 
@@ -266,16 +307,16 @@ export default function ServiceFormPage() {
                   {STATUS_OPTIONS.map(opt => (
                     <button
                       key={opt.value}
-                      className="flex items-center gap-2 w-full px-3 py-3 hover:bg-zinc-50 transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2.5 hover:bg-zinc-50 transition-colors"
                       onClick={() => { setField('status', opt.value); setStatusOpen(false) }}
                     >
                       <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        className="w-4 h-4 rounded shrink-0"
                         style={{ backgroundColor: opt.color }}
                       />
-                      <span className="flex-1 text-sm text-zinc-900 text-left">{opt.label}</span>
+                      <span className="flex-1 text-sm text-zinc-950 text-left">{opt.label}</span>
                       {form.status === opt.value && (
-                        <span className="text-xs text-zinc-500">✓</span>
+                        <span className="text-xs text-zinc-400">✓</span>
                       )}
                     </button>
                   ))}
@@ -286,60 +327,85 @@ export default function ServiceFormPage() {
         </div>
 
         {/* Name */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Name</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Name</p>
           <input
             type="text"
-            placeholder="e.g. Haircut & blowout"
-            className="h-11 px-3 border border-zinc-200 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white"
+            placeholder="Service name"
+            className="h-9 px-3 border border-zinc-200 rounded-lg text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white shadow-[0_1px_2px_rgba(0,0,0,0)]"
             value={form.name}
             onChange={e => setField('name', e.target.value)}
           />
         </div>
 
         {/* Image */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Image</p>
-          <div className="h-20 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center bg-zinc-50">
-            <p className="text-sm text-zinc-400">Tap to upload image</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Image</p>
+          <div
+            className="flex items-center h-9 px-3 border border-zinc-200 rounded-lg bg-white shadow-[0_1px_2px_rgba(0,0,0,0)] cursor-pointer gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <span className="text-sm font-medium text-zinc-950 shrink-0">
+              {isUploading ? 'Uploading…' : 'Choose File'}
+            </span>
+            <span className="text-sm text-zinc-400 truncate">
+              {imageFileName ?? 'No file chosen'}
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleImageChange}
+            />
           </div>
+          {form.imageUrl && (
+            <img
+              src={form.imageUrl}
+              alt="Service preview"
+              className="mt-1 h-20 w-20 object-cover rounded-lg border border-zinc-200"
+            />
+          )}
         </div>
 
         {/* Description */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Description</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Description</p>
           <textarea
-            placeholder="Describe this service…"
+            placeholder="Add service description"
             rows={3}
-            className="px-3 py-2.5 border border-zinc-200 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white resize-none"
+            className="px-3 py-2 border border-zinc-200 rounded-lg text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white resize-none shadow-[0_1px_2px_rgba(0,0,0,0)]"
             value={form.description}
             onChange={e => setField('description', e.target.value)}
           />
         </div>
 
         {/* Category */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Category</p>
-          <input
-            type="text"
-            placeholder="e.g. Hair, Nails, Skin"
-            className="h-11 px-3 border border-zinc-200 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white"
-            value={form.category}
-            onChange={e => setField('category', e.target.value)}
-          />
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Category</p>
+          <Select value={form.category || undefined} onValueChange={v => setField('category', v)}>
+            <SelectTrigger className="h-9 border-[#d4d4d4] shadow-[0_1px_2px_rgba(0,0,0,0)] text-sm">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Price */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Price</p>
-          <div className="flex items-center h-11 border border-zinc-200 rounded-lg bg-white overflow-hidden">
-            <span className="pl-3 pr-1 text-sm text-zinc-500 shrink-0">$</span>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Price</p>
+          <div className="flex items-center h-9 border border-zinc-200 rounded-lg bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0)]">
+            <span className="pl-3 pr-1 text-sm text-zinc-400 shrink-0">$</span>
             <input
               type="number"
-              placeholder="0.00"
+              placeholder="0"
               min="0"
               step="0.01"
-              className="flex-1 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none bg-transparent"
+              className="flex-1 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none bg-transparent"
               value={form.price}
               onChange={e => setField('price', e.target.value)}
             />
@@ -347,16 +413,16 @@ export default function ServiceFormPage() {
         </div>
 
         {/* Subscription price */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Subscription price</p>
-          <div className="flex items-center h-11 border border-zinc-200 rounded-lg bg-white overflow-hidden">
-            <span className="pl-3 pr-1 text-sm text-zinc-500 shrink-0">$</span>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Subscription price</p>
+          <div className="flex items-center h-9 border border-zinc-200 rounded-lg bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0)]">
+            <span className="pl-3 pr-1 text-sm text-zinc-400 shrink-0">$</span>
             <input
               type="number"
-              placeholder="0.00"
+              placeholder="0"
               min="0"
               step="0.01"
-              className="flex-1 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none bg-transparent"
+              className="flex-1 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none bg-transparent"
               value={form.subscriptionPrice}
               onChange={e => setField('subscriptionPrice', e.target.value)}
             />
@@ -364,19 +430,19 @@ export default function ServiceFormPage() {
         </div>
 
         {/* Duration */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Duration</p>
-          <div className="flex items-center h-11 border border-zinc-200 rounded-lg bg-white overflow-hidden">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-zinc-950">Duration</p>
+          <div className="flex items-center h-9 border border-zinc-200 rounded-lg bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0)]">
             <input
               type="number"
               placeholder="0"
               min="0"
               step="1"
-              className="flex-1 pl-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none bg-transparent"
+              className="flex-1 pl-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none bg-transparent"
               value={form.durationMinutes}
               onChange={e => setField('durationMinutes', e.target.value)}
             />
-            <span className="pr-3 pl-1 text-sm text-zinc-500 shrink-0">minutes</span>
+            <span className="pr-3 pl-1 text-sm text-zinc-400 shrink-0">Minutes</span>
           </div>
         </div>
 
