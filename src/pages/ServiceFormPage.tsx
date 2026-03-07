@@ -127,10 +127,12 @@ export default function ServiceFormPage() {
     setStatusOpen(false)
 
     if (!isCreate && id) {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('services')
         .update({ status: newStatus })
         .eq('id', id)
+        .select()
+      console.log('[ServiceForm] status update:', { newStatus, id, data, error })
       if (error) toast.error('Failed to update status')
     }
   }
@@ -188,10 +190,12 @@ export default function ServiceFormPage() {
 
     if (isCreate) {
       if (!businessId) { setIsSaving(false); return }
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('services')
         .insert({ ...payload, business_id: businessId, source: 'manual' })
+        .select()
 
+      console.log('[ServiceForm] insert:', { data, error })
       if (error) {
         toast.error('Failed to save service')
       } else {
@@ -199,11 +203,13 @@ export default function ServiceFormPage() {
         navigate('/services')
       }
     } else {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('services')
         .update(payload)
         .eq('id', id!)
+        .select()
 
+      console.log('[ServiceForm] update:', { id, data, error })
       if (error) {
         toast.error('Failed to save service')
       } else {
@@ -218,11 +224,12 @@ export default function ServiceFormPage() {
   async function handleDelete() {
     if (!window.confirm('Delete this service?')) return
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('services')
       .delete()
       .eq('id', id!)
 
+    console.log('[ServiceForm] delete:', { id, error, count })
     if (error) {
       toast.error('Failed to delete service')
     } else {
@@ -238,7 +245,7 @@ export default function ServiceFormPage() {
 
     if (!businessId) return
 
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from('services')
       .insert({
         business_id: businessId,
@@ -253,7 +260,9 @@ export default function ServiceFormPage() {
         duration_minutes: durationVal,
         image_url: form.imageUrl,
       })
+      .select()
 
+    console.log('[ServiceForm] duplicate:', { data, error })
     if (error) {
       toast.error('Failed to duplicate service')
     } else {
