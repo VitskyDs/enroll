@@ -3,6 +3,7 @@ import {
   Drawer,
   DrawerContent,
   DrawerTitle,
+  DrawerDescription,
 } from '@/components/ui/drawer'
 
 interface InviteDrawerProps {
@@ -22,6 +23,7 @@ export function InviteDrawer({
     <Drawer open={open} onClose={onClose}>
       <DrawerContent className="bg-[#171717] border-0 px-6 pb-8 gap-6">
         <DrawerTitle className="sr-only">Invite customers</DrawerTitle>
+        <DrawerDescription className="sr-only">Share your loyalty program link with customers</DrawerDescription>
         {/* White card: heading + QR code */}
         <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col items-center gap-5 w-full">
           <div className="flex flex-col gap-1 text-center w-full">
