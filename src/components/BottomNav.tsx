@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, House, Send, Award, Menu, Sparkles } from 'lucide-react'
 
 interface Props {
-  active?: 'home' | 'program'
+  active?: 'home' | 'program' | 'services'
   onShare?: () => void
 }
 
@@ -41,8 +41,11 @@ export function BottomNav({ active, onShare }: Props) {
         >
           <Award className={`w-6 h-6 ${active === 'program' ? 'text-zinc-900' : 'text-zinc-500'}`} />
         </button>
-        <button className="flex items-center justify-center w-12 h-12 rounded-full">
-          <Menu className="w-6 h-6 text-zinc-500" />
+        <button
+          className={`flex items-center justify-center w-12 h-12 rounded-full ${active === 'services' ? 'bg-zinc-100' : ''}`}
+          onClick={() => navigate('/services')}
+        >
+          <Menu className={`w-6 h-6 ${active === 'services' ? 'text-zinc-900' : 'text-zinc-500'}`} />
         </button>
       </div>
 
