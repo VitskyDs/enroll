@@ -15,6 +15,7 @@ import {
 interface Props {
   open: boolean
   onClose: () => void
+  onInvite?: () => void
 }
 
 const MENU_ITEMS = [
@@ -29,7 +30,7 @@ const MENU_ITEMS = [
   { label: 'Payment provider', icon: HandCoins, route: null },
 ] as const
 
-export function SettingsOverlay({ open, onClose }: Props) {
+export function SettingsOverlay({ open, onClose, onInvite }: Props) {
   const navigate = useNavigate()
   const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(false)
@@ -56,8 +57,11 @@ export function SettingsOverlay({ open, onClose }: Props) {
 
   if (!mounted) return null
 
-  function handleItem(route: string | null) {
-    if (route) {
+  function handleItem(label: string, route: string | null) {
+    if (label === 'Invite customer') {
+      onClose()
+      onInvite?.()
+    } else if (route) {
       navigate(route)
       onClose()
     }
@@ -89,7 +93,7 @@ export function SettingsOverlay({ open, onClose }: Props) {
             <button
               key={label}
               className="flex items-center gap-3 h-10 px-2 rounded-md w-full text-left"
-              onClick={() => handleItem(route)}
+              onClick={() => handleItem(label, route)}
             >
               <Icon className="w-6 h-6 text-[#404040] shrink-0" />
               <span className="text-[20px] font-semibold text-[#404040] leading-6 truncate">

@@ -18,7 +18,7 @@ export function BottomNav({ active: activeProp, onShare }: Props) {
 
   return (
     <>
-      <SettingsOverlay open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsOverlay open={settingsOpen} onClose={() => setSettingsOpen(false)} onInvite={onShare} />
 
       <div
         className="fixed bottom-0 left-0 right-0 flex items-start justify-center gap-3 px-4 pt-3 z-50"
