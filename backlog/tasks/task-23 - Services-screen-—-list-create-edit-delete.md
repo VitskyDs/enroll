@@ -1,10 +1,10 @@
 ---
 id: TASK-23
 title: 'Services screen — list, create, edit, delete'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-07 06:13'
-updated_date: '2026-03-07 07:59'
+updated_date: '2026-03-07 15:24'
 labels: []
 milestone: m-1
 dependencies: []
