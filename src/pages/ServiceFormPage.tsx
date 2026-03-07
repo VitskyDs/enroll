@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Share2, Ellipsis, ChevronDown } from 'lucide-react'
+import { BottomNav } from '@/components/BottomNav'
 import { toast } from 'sonner'
 import {
   Select,
@@ -260,29 +261,30 @@ export default function ServiceFormPage() {
         ) : (
           <>
             <button
-              className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
-              onClick={() => navigate('/services')}
+              className="w-9 h-9 flex items-center justify-center bg-zinc-100 rounded-lg shrink-0 disabled:opacity-50"
+              onClick={handleSave}
+              disabled={isSaving}
             >
-              <ChevronLeft className="w-5 h-5 text-zinc-900" />
+              <ChevronLeft className="w-4 h-4 text-zinc-900" />
             </button>
-            <p className="flex-1 text-center text-sm font-semibold text-zinc-950 truncate">
-              {form.name || 'Service'}
-            </p>
-            <button className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0">
-              <Share2 className="w-4 h-4 text-zinc-700" />
-            </button>
-            <button
-              className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
-              onClick={() => setActionSheetOpen(true)}
-            >
-              <Ellipsis className="w-4 h-4 text-zinc-700" />
-            </button>
+            <span className="flex-1" />
+            <div className="flex items-center gap-2">
+              <button className="w-9 h-9 flex items-center justify-center bg-zinc-100 rounded-lg shrink-0">
+                <Share2 className="w-4 h-4 text-zinc-700" />
+              </button>
+              <button
+                className="w-9 h-9 flex items-center justify-center bg-zinc-100 rounded-lg shrink-0"
+                onClick={() => setActionSheetOpen(true)}
+              >
+                <Ellipsis className="w-4 h-4 text-zinc-700" />
+              </button>
+            </div>
           </>
         )}
       </div>
 
       {/* Form body */}
-      <div className="flex-1 px-4 pb-12 flex flex-col gap-6 pt-6">
+      <div className={`flex-1 px-4 flex flex-col gap-6 pt-6 ${isCreate ? 'pb-12' : 'pb-32'}`}>
 
         {/* Service status */}
         <div className="flex flex-col gap-1">
@@ -448,18 +450,8 @@ export default function ServiceFormPage() {
 
       </div>
 
-      {/* Save button at bottom for edit mode */}
-      {!isCreate && (
-        <div className="px-4 pb-8">
-          <button
-            className="w-full h-11 bg-zinc-900 text-white text-sm font-medium rounded-lg disabled:opacity-50"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Saving…' : 'Save changes'}
-          </button>
-        </div>
-      )}
+      {/* Bottom nav (edit mode only) */}
+      {!isCreate && <BottomNav active="services" />}
 
       {/* Action sheet (edit mode only) */}
       {!isCreate && (
