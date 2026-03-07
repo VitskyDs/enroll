@@ -11,9 +11,10 @@ interface Props {
 const PILL_SHADOW = { boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }
 const SAFE_PADDING = { paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }
 
-export function BottomNav({ active, onShare }: Props) {
+export function BottomNav({ active: activeProp, onShare }: Props) {
   const navigate = useNavigate()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const active = settingsOpen ? undefined : activeProp
 
   return (
     <>
