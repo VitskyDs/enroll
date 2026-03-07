@@ -132,6 +132,7 @@ export default function ServicesPage() {
       <ResourceScreen
         title="Services"
         items={filteredServices}
+        hasAnyItems={services.length > 0}
         isLoading={isLoading}
         error={error}
         onAdd={() => navigate('/services/new')}

@@ -1,14 +1,16 @@
 import React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 
 interface ResourceScreenProps<T extends { id: string }> {
   title: string
   items: T[]
+  /** Total count before search/filter — used to distinguish true-empty from no-results */
+  hasAnyItems?: boolean
   isLoading?: boolean
   error?: string | null
   onAdd: () => void
   renderItem: (item: T) => React.ReactNode
-  // Empty state
+  // Empty state (no items at all)
   emptyIcon: React.ReactNode
   emptyHeading: string
   emptySubtext: string
@@ -22,6 +24,7 @@ interface ResourceScreenProps<T extends { id: string }> {
 export function ResourceScreen<T extends { id: string }>({
   title,
   items,
+  hasAnyItems,
   isLoading = false,
   error = null,
   onAdd,
@@ -34,7 +37,9 @@ export function ResourceScreen<T extends { id: string }>({
   toolbar,
   filterTabs,
 }: ResourceScreenProps<T>) {
-  const isEmpty = !isLoading && !error && items.length === 0
+  const hasItems = hasAnyItems ?? items.length > 0
+  const isEmpty = !isLoading && !error && !hasItems
+  const isNoResults = !isLoading && !error && hasItems && items.length === 0
   const isPopulated = !isLoading && !error && items.length > 0
 
   return (
@@ -98,6 +103,26 @@ export function ResourceScreen<T extends { id: string }>({
                   {emptySecondaryActions}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* No-results state (has items, but none match current search/filter) */}
+          {isNoResults && (
+            <div className="flex flex-col gap-2">
+              {(toolbar || filterTabs) && (
+                <>
+                  {toolbar}
+                  {filterTabs}
+                </>
+              )}
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center">
+                  <Search className="w-5 h-5 text-zinc-600" />
+                </div>
+                <p className="text-base font-medium text-zinc-900 text-center">
+                  No matching {title.toLowerCase()} found
+                </p>
+              </div>
             </div>
           )}
 
