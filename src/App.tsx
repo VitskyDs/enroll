@@ -9,6 +9,7 @@ import ProgramFeaturePage from '@/pages/ProgramFeaturePage'
 import ServicesPage from '@/pages/ServicesPage'
 import ServiceFormPage from '@/pages/ServiceFormPage'
 import CustomersPage from '@/pages/CustomersPage'
+import CustomerPage from '@/pages/CustomerPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/services/:id" element={<ServiceFormPage />} />
       <Route path="/customers" element={<CustomersPage />} />
+      <Route path="/customers/:id" element={<CustomerPage />} />
     </Routes>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Search, ArrowUpDown, ListFilter, UsersRound } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
@@ -27,7 +28,7 @@ function formatDate(iso: string) {
   })
 }
 
-function CustomerItem({ customer }: { customer: CustomerRow }) {
+function CustomerItem({ customer, onClick }: { customer: CustomerRow; onClick?: () => void }) {
   const isActive = customer.status === 'active'
   const spendTierPoints = [
     `$${Number(customer.total_spend).toFixed(2)}`,
@@ -36,7 +37,7 @@ function CustomerItem({ customer }: { customer: CustomerRow }) {
   ].filter(Boolean).join(' · ')
 
   return (
-    <div className="flex items-start gap-4 w-full py-3">
+    <button className="flex items-start gap-4 w-full py-3 text-left" onClick={onClick}>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-zinc-950 leading-5 truncate">{customer.name}</p>
         <p className="text-sm text-zinc-500 leading-5 truncate">{spendTierPoints}</p>
@@ -50,11 +51,12 @@ function CustomerItem({ customer }: { customer: CustomerRow }) {
           {isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
-    </div>
+    </button>
   )
 }
 
 export default function CustomersPage() {
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState<CustomerRow[]>([])
   const [hasProgram, setHasProgram] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -175,7 +177,7 @@ export default function CustomersPage() {
         isLoading={isLoading}
         error={error}
         onAdd={() => {}}
-        renderItem={c => <CustomerItem key={c.id} customer={c} />}
+        renderItem={c => <CustomerItem key={c.id} customer={c} onClick={() => navigate(`/customers/${c.id}`)} />}
         emptyIcon={<UsersRound className="w-5 h-5 text-zinc-600" />}
         emptyHeading="Get to know your customers"
         emptySubtext="Every time a customer enrolls or places an order, their details are saved."
