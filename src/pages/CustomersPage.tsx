@@ -29,17 +29,18 @@ function formatDate(iso: string) {
 
 function CustomerItem({ customer }: { customer: CustomerRow }) {
   const isActive = customer.status === 'active'
-  const tierLabel = customer.tier ? ` · ${customer.tier}` : ''
-  const spendLabel = `$${Number(customer.total_spend).toFixed(2)} · ${customer.points} pts`
+  const spendTierPoints = [
+    `$${Number(customer.total_spend).toFixed(2)}`,
+    customer.tier ?? null,
+    `${customer.points} pts`,
+  ].filter(Boolean).join(' · ')
 
   return (
     <div className="flex items-start gap-4 w-full py-3">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-zinc-950 leading-5 truncate">{customer.name}</p>
-        <p className="text-sm text-zinc-500 leading-5 truncate">
-          {formatDate(customer.joined_at)}{tierLabel}
-        </p>
-        <p className="text-sm text-zinc-500 leading-5 truncate">{spendLabel}</p>
+        <p className="text-sm text-zinc-500 leading-5 truncate">{spendTierPoints}</p>
+        <p className="text-sm text-zinc-500 leading-5 truncate">{formatDate(customer.joined_at)}</p>
       </div>
       <div
         className="shrink-0 flex items-center justify-center px-2 py-0.5 rounded-lg mt-0.5"
