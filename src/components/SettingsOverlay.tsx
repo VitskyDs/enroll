@@ -21,7 +21,7 @@ interface Props {
 
 const MENU_ITEMS = [
   { label: 'Home', icon: House, route: '/dashboard' },
-  { label: 'Customers', icon: UsersRound, route: null },
+  { label: 'Customers', icon: UsersRound, route: '/customers' },
   { label: 'Invite customer', icon: Send, route: null },
   { label: 'Services', icon: HandHeart, route: '/services' },
   { label: 'Products', icon: ShoppingBag, route: null },

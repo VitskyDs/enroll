@@ -4,7 +4,7 @@ import { Search, House, Send, Award, Menu, Sparkles } from 'lucide-react'
 import { SettingsOverlay } from '@/components/SettingsOverlay'
 
 interface Props {
-  active?: 'home' | 'program' | 'services'
+  active?: 'home' | 'program' | 'services' | 'customers'
   onShare?: () => void
 }
 
