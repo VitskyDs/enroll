@@ -44,16 +44,16 @@ export function InviteDrawer({
   }
 
   async function handleShare() {
-    const shareData = { url: inviteUrl, title: `Join ${businessName}'s loyalty program` }
-    if (navigator.share && navigator.canShare?.(shareData)) {
+    if (navigator.share) {
       try {
-        await navigator.share(shareData)
-        return
+        await navigator.share({ url: inviteUrl, title: `Join ${businessName}'s loyalty program` })
       } catch {
-        // user cancelled or share failed — fall through to clipboard
+        // user cancelled — do nothing
       }
+    } else {
+      // No Web Share API (desktop) — fall back to clipboard
+      handleCopy()
     }
-    handleCopy()
   }
 
   return (
