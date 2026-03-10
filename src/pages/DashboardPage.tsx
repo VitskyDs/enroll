@@ -27,7 +27,7 @@ export default function DashboardPage() {
       .single()
       .then(({ data }) => {
         if (data?.name) setBusinessName(data.name)
-        if (data?.slug) setInviteUrl(`https://enroll.app/join/${data.slug}`)
+        if (data?.slug) setInviteUrl(`${window.location.origin}/join/${data.slug}`)
       })
   }, [])
 
