@@ -15,17 +15,19 @@ const CHECKLIST_ITEMS = [
 
 export default function DashboardPage() {
   const [businessName, setBusinessName] = useState<string>('Your business')
+  const [inviteUrl, setInviteUrl] = useState<string>('')
   const [inviteOpen, setInviteOpen] = useState(false)
 
   useEffect(() => {
     supabase
       .from('businesses')
-      .select('name')
+      .select('name, slug')
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
       .then(({ data }) => {
         if (data?.name) setBusinessName(data.name)
+        if (data?.slug) setInviteUrl(`https://enroll.app/join/${data.slug}`)
       })
   }, [])
 
@@ -107,6 +109,7 @@ export default function DashboardPage() {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         businessName={businessName}
+        inviteUrl={inviteUrl}
       />
     </div>
   )
