@@ -47,7 +47,7 @@ export function ResourceScreen<T extends { id: string }>({
       <div className="flex-1 overflow-y-auto flex flex-col pb-28">
 
         {/* Page header */}
-        <div className="bg-white flex items-center gap-2 overflow-clip pb-4 pt-16 px-4 w-full">
+        <div className="bg-white flex items-center gap-2 overflow-clip pb-4 pt-safe px-4 w-full">
           <p className="flex-1 text-2xl font-semibold text-zinc-950 tracking-tight leading-tight">
             {title}
           </p>

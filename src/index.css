@@ -79,6 +79,21 @@
   }
 }
 
+/* Safe area top — adapts to notch / Dynamic Island.
+   Unlayered so it wins over Tailwind utility classes. */
+.pt-safe {
+  padding-top: max(3.5rem, env(safe-area-inset-top));
+}
+
+/* Prevent iOS Safari from zooming the viewport when an input is focused.
+   iOS zooms whenever font-size < 16px. !important beats Tailwind class selectors
+   (which have higher specificity than element selectors). */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 /* Sonner toast animations */
 @keyframes toast-slide-in {
   from { opacity: 0; transform: translateY(12px); }

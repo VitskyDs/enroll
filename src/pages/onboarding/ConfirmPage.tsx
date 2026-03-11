@@ -71,7 +71,7 @@ export default function ConfirmPage() {
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Header */}
-      <div className="flex flex-col gap-4 px-4 pt-14 pb-6 shrink-0">
+      <div className="flex flex-col gap-4 px-4 pt-safe pb-6 shrink-0">
         <button
           onClick={() => navigate('/onboarding/program')}
           className="flex items-center justify-center w-10 h-10 rounded bg-zinc-100 shrink-0"

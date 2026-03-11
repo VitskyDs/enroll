@@ -157,7 +157,7 @@ export default function CustomerPage() {
   const currentStatus = STATUS_OPTIONS.find(o => o.value === form.status) ?? STATUS_OPTIONS[0]
 
   const header = isDirty ? (
-    <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+    <div className="flex items-center justify-between px-4 pt-safe pb-4 bg-white">
       <button
         className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
         onClick={handleCancel}
@@ -173,7 +173,7 @@ export default function CustomerPage() {
       </button>
     </div>
   ) : (
-    <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+    <div className="flex items-center justify-between px-4 pt-safe pb-4 bg-white">
       <button
         className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
         onClick={() => navigate(-1)}

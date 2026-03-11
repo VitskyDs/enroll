@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Bell, Menu, Sparkles } from 'lucide-react'
+import { Bell, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import { Row } from '@/components/ChecklistRow'
@@ -34,21 +34,16 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-6 px-4 pt-14 pb-28">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-6 px-4 pt-safe pb-28">
 
         {/* Header */}
         <div className="flex items-center gap-2">
           <p className="flex-1 text-xl font-semibold text-zinc-900 leading-6 truncate">
             {businessName}
           </p>
-          <div className="flex items-center gap-1">
-            <button className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-100 transition-colors">
-              <Bell className="w-4 h-4 text-zinc-700" />
-            </button>
-            <button className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-100 transition-colors">
-              <Menu className="w-4 h-4 text-zinc-700" />
-            </button>
-          </div>
+          <button className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-100 transition-colors">
+            <Bell className="w-4 h-4 text-zinc-700" />
+          </button>
         </div>
 
         {/* Banner */}

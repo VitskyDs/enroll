@@ -317,7 +317,7 @@ export default function ServiceFormPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-zinc-50">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white shrink-0">
+      <div className="flex items-center justify-between px-4 pt-safe pb-4 bg-white shrink-0">
         <button
           className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
           onClick={() => navigate(-1)}

@@ -35,7 +35,7 @@ export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidg
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      <header className="flex flex-col gap-4 px-4 pt-14 pb-6">
+      <header className="flex flex-col gap-4 px-4 pt-safe pb-6">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}

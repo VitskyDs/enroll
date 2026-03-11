@@ -104,7 +104,7 @@ export default function ProgramFeaturePage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
-      <div className="flex-1 overflow-y-auto flex flex-col gap-6 px-4 pt-16 pb-32">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-6 px-4 pt-safe pb-32">
 
         {/* Heading */}
         <div className="flex flex-col gap-2">
