@@ -1,12 +1,14 @@
 ---
 id: TASK-21
 title: Implement program screen
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-06 22:01'
+updated_date: '2026-03-07 05:01'
 labels: []
 dependencies: []
 priority: medium
+ordinal: 12000
 ---
 
 ## Description

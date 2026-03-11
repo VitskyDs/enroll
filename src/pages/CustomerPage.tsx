@@ -140,7 +140,7 @@ export default function CustomerPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center h-screen bg-white">
         <div className="w-5 h-5 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
       </div>
     )
@@ -148,7 +148,7 @@ export default function CustomerPage() {
 
   if (!customer) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center h-screen bg-white">
         <p className="text-sm text-zinc-500">Customer not found</p>
       </div>
     )
@@ -190,10 +190,10 @@ export default function CustomerPage() {
   )
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col h-screen overflow-hidden bg-white">
       {header}
 
-      <div className="flex-1 px-4 flex flex-col gap-6 pt-6 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 flex flex-col gap-6 pt-6 pb-32">
 
         {/* Status */}
         <div className="flex flex-col gap-1">

@@ -308,16 +308,16 @@ export default function ServiceFormPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex items-center justify-center h-screen bg-white">
         <div className="w-5 h-5 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50">
+    <div className="flex flex-col h-screen overflow-hidden bg-zinc-50">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
+      <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white shrink-0">
         <button
           className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
           onClick={() => navigate(-1)}
@@ -340,7 +340,7 @@ export default function ServiceFormPage() {
       </div>
 
       {/* Body */}
-      <div className="flex flex-col gap-3 pb-32">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-3 pb-32">
 
         {/* Basic information */}
         <div className="bg-white px-4">

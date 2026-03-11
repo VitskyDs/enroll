@@ -1,15 +1,15 @@
 ---
 id: TASK-19
 title: Implement InviteDrawer UI
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-06 21:43'
-updated_date: '2026-03-07 05:02'
+updated_date: '2026-03-07 05:54'
 labels: []
 milestone: m-1
 dependencies: []
 priority: medium
-ordinal: 1000
+ordinal: 13000
 ---
 
 ## Description

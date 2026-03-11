@@ -4,9 +4,12 @@ title: Add products table to the database
 status: To Do
 assignee: []
 created_date: '2026-03-05 20:57'
+updated_date: '2026-03-07 05:01'
 labels: []
+milestone: m-3
 dependencies: []
 priority: medium
+ordinal: 11000
 ---
 
 ## Description

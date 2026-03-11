@@ -43,8 +43,8 @@ export function ResourceScreen<T extends { id: string }>({
   const isPopulated = !isLoading && !error && items.length > 0
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <div className="flex-1 flex flex-col pb-28">
+    <div className="flex flex-col h-screen overflow-hidden bg-white">
+      <div className="flex-1 overflow-y-auto flex flex-col pb-28">
 
         {/* Page header */}
         <div className="bg-white flex items-center gap-2 overflow-clip pb-4 pt-16 px-4 w-full">

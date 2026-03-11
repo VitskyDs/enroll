@@ -1,13 +1,15 @@
 ---
 id: TASK-18
 title: Implement dashboard screen
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-06 20:51'
-updated_date: '2026-03-06 20:52'
+updated_date: '2026-03-07 05:01'
 labels: []
+milestone: m-1
 dependencies: []
 priority: high
+ordinal: 11000
 ---
 
 ## Description

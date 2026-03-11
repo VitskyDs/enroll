@@ -4,7 +4,9 @@ title: Industry-specific loyalty program guidelines and examples
 status: To Do
 assignee: []
 created_date: '2026-03-05 20:50'
+updated_date: '2026-03-07 05:01'
 labels: []
+milestone: m-0
 dependencies: []
 references:
   - 'https://www.openloyalty.io/insider/sephora-beauty-insider'
@@ -16,6 +18,7 @@ references:
   - src/lib/validateProgram.ts
   - src/types/index.ts
 priority: high
+ordinal: 10000
 ---
 
 ## Description

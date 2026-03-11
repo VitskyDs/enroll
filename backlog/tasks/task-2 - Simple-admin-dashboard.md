@@ -1,15 +1,15 @@
 ---
 id: TASK-2
 title: Simple admin dashboard
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-02 19:17'
-updated_date: '2026-03-05 09:29'
+updated_date: '2026-03-11 15:53'
 labels: []
 milestone: m-0
 dependencies: []
 priority: high
-ordinal: 2000
+ordinal: 17000
 ---
 
 ## Description

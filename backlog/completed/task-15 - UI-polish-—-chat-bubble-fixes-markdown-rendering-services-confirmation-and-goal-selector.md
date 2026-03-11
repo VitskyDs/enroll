@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-03-05 16:42'
-updated_date: '2026-03-07 05:01'
+updated_date: '2026-03-05 16:59'
 labels: []
 dependencies: []
 references:
@@ -17,7 +17,6 @@ references:
     https://www.figma.com/design/y36JOK2UFgeBR0xnPSdQcC/Enroll---Mobile-V2?node-id=3-34770
     — ProgramPage goal selector with Rich Radio Group
 priority: high
-ordinal: 10000
 ---
 
 ## Description

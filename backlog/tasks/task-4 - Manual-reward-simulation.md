@@ -4,8 +4,9 @@ title: Manual reward simulation
 status: To Do
 assignee: []
 created_date: '2026-03-02 19:17'
-updated_date: '2026-03-02 20:10'
+updated_date: '2026-03-06 21:54'
 labels: []
+milestone: m-1
 dependencies:
   - TASK-2
   - TASK-3

@@ -4,8 +4,9 @@ title: Customer enrollment page
 status: To Do
 assignee: []
 created_date: '2026-03-02 19:17'
-updated_date: '2026-03-02 20:10'
+updated_date: '2026-03-06 21:56'
 labels: []
+milestone: m-2
 dependencies:
   - TASK-1
 priority: high

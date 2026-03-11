@@ -1,10 +1,10 @@
 ---
 id: TASK-25
 title: Implement customers screen
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-08 08:21'
-updated_date: '2026-03-08 08:21'
+updated_date: '2026-03-11 15:54'
 labels: []
 milestone: m-1
 dependencies: []
@@ -16,6 +16,7 @@ references:
   - >-
     https://www.figma.com/design/y36JOK2UFgeBR0xnPSdQcC/%F0%9F%8F%A2-Enroll---Business?node-id=199-4174&t=jpj415DO6PU0P1Sq-11
 priority: medium
+ordinal: 18000
 ---
 
 ## Description
