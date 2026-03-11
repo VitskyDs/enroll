@@ -139,7 +139,7 @@ export function MediaDrawer({ open, onOpenChange, serviceId, images, onImagesCha
     <Drawer open={open} onOpenChange={handleClose}>
       <DrawerContent
         aria-describedby={undefined}
-        className="max-w-[420px] mx-auto h-[95dvh] flex flex-col overflow-hidden"
+        className="max-w-[420px] mx-auto h-[90dvh] flex flex-col overflow-hidden"
       >
         <div className="px-4 shrink-0">
           <DrawerHeader title="Media" />

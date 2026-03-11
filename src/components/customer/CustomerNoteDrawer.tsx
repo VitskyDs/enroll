@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { DrawerHeader } from '@/components/ui/drawer-header'
-import { ServiceDrawerShell } from './ServiceDrawer'
+import { ServiceDrawerShell } from '@/components/service/ServiceDrawer'
+import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
+  customerId: string
   value: string
-  onSave: (value: string) => Promise<void>
+  onSave: (value: string) => void
 }
 
-export function NoteDrawer({ open, onOpenChange, value, onSave }: Props) {
+export function CustomerNoteDrawer({ open, onOpenChange, customerId, value, onSave }: Props) {
   const [local, setLocal] = useState(value)
   const [saving, setSaving] = useState(false)
 
@@ -26,7 +29,19 @@ export function NoteDrawer({ open, onOpenChange, value, onSave }: Props) {
 
   async function handleSave() {
     setSaving(true)
-    await onSave(local.trim())
+
+    const { error } = await supabase
+      .from('customers')
+      .update({ note: local.trim() || null })
+      .eq('id', customerId)
+
+    if (error) {
+      toast.error('Failed to save note')
+    } else {
+      onSave(local.trim())
+      onOpenChange(false)
+    }
+
     setSaving(false)
   }
 
@@ -49,7 +64,7 @@ export function NoteDrawer({ open, onOpenChange, value, onSave }: Props) {
         <textarea
           value={local}
           onChange={e => setLocal(e.target.value)}
-          placeholder="Add a private note about this service"
+          placeholder="Add a private note about this customer"
           rows={4}
           autoFocus
           className="w-full px-3 py-2 border border-input rounded-md text-sm bg-transparent shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
