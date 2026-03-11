@@ -1,78 +1,90 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronDown, ChevronLeft, Share2, Ellipsis } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CirclePlus, Ellipsis, ImagePlus, Share2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { BottomNav } from '@/components/BottomNav'
 import { ActionSheet } from '@/components/resource/ActionSheet'
-import { toast } from 'sonner'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { StatusDrawer } from '@/components/service/StatusDrawer'
+import { NameDescriptionDrawer } from '@/components/service/NameDescriptionDrawer'
+import { PricingDrawer } from '@/components/service/PricingDrawer'
+import { CategoryDrawer } from '@/components/service/CategoryDrawer'
+import { NoteDrawer } from '@/components/service/NoteDrawer'
+import { MediaDrawer } from '@/components/service/MediaDrawer'
 import { supabase } from '@/lib/supabase'
 
 const ACTIVE_COLOR = '#009689'
 const DRAFT_COLOR = '#a3a3a3'
 const INACTIVE_COLOR = '#71717a'
 
-const CATEGORIES = [
-  'Hair',
-  'Nails',
-  'Skin',
-  'Massage',
-  'Waxing',
-  'Lashes & brows',
-  'Makeup',
-  'Wellness',
-  'Fitness',
-  'Other',
-]
+type Status = 'active' | 'draft' | 'inactive'
+type DrawerType = 'status' | 'nameDescription' | 'pricing' | 'category' | 'note' | 'media'
 
-interface ServiceForm {
+interface ServiceData {
   name: string
-  status: 'active' | 'draft' | 'inactive'
+  status: Status
   description: string
   category: string
   price: string
   subscriptionPrice: string
-  durationMinutes: string
-  imageUrl: string | null
+  note: string
 }
 
-const DEFAULT_FORM: ServiceForm = {
+const DEFAULT_DATA: ServiceData = {
   name: '',
   status: 'active',
   description: '',
   category: '',
   price: '',
   subscriptionPrice: '',
-  durationMinutes: '',
-  imageUrl: null,
+  note: '',
 }
 
-const STATUS_OPTIONS: { value: 'active' | 'draft' | 'inactive'; label: string; color: string }[] = [
-  { value: 'active', label: 'Active', color: ACTIVE_COLOR },
-  { value: 'draft', label: 'Draft', color: DRAFT_COLOR },
-  { value: 'inactive', label: 'Inactive', color: INACTIVE_COLOR },
-]
+const STATUS_COLOR: Record<Status, string> = {
+  active: ACTIVE_COLOR,
+  draft: DRAFT_COLOR,
+  inactive: INACTIVE_COLOR,
+}
+
+const STATUS_LABEL: Record<Status, string> = {
+  active: 'Active',
+  draft: 'Draft',
+  inactive: 'Inactive',
+}
+
+function Divider() {
+  return <div className="h-px bg-zinc-100 w-full" />
+}
+
+interface PropertyRowProps {
+  label: React.ReactNode
+  right?: React.ReactNode
+  onClick: () => void
+}
+
+function PropertyRow({ label, right, onClick }: PropertyRowProps) {
+  return (
+    <button
+      className="flex items-center gap-2 w-full py-4 text-left"
+      onClick={onClick}
+    >
+      <span className="flex-1 text-base text-[#404040] truncate">{label}</span>
+      {right}
+      <ChevronRight className="w-6 h-6 text-zinc-300 shrink-0" />
+    </button>
+  )
+}
 
 export default function ServiceFormPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isCreate = id === 'new'
 
-  const [form, setForm] = useState<ServiceForm>(DEFAULT_FORM)
-  const [originalForm, setOriginalForm] = useState<ServiceForm>(DEFAULT_FORM)
-  const [isDirty, setIsDirty] = useState(false)
+  const [data, setData] = useState<ServiceData>(DEFAULT_DATA)
+  const [images, setImages] = useState<string[]>([])
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(!isCreate)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [imageFileName, setImageFileName] = useState<string | null>(null)
-  const [statusOpen, setStatusOpen] = useState(false)
   const [actionSheetOpen, setActionSheetOpen] = useState(false)
+  const [openDrawer, setOpenDrawer] = useState<DrawerType | null>(isCreate ? 'nameDescription' : null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -82,8 +94,8 @@ export default function ServiceFormPage() {
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
-      .then(({ data }) => {
-        if (data) setBusinessId(data.id)
+      .then(({ data: biz }) => {
+        if (biz) setBusinessId(biz.id)
       })
   }, [])
 
@@ -92,146 +104,168 @@ export default function ServiceFormPage() {
 
     async function load() {
       setIsLoading(true)
-      const { data, error } = await supabase
-        .from('services')
-        .select('id, name, status, description, category, price, subscription_price, duration_minutes, image_url')
-        .eq('id', id)
-        .single()
+      const [{ data: row, error }, { data: imgs }] = await Promise.all([
+        supabase
+          .from('services')
+          .select('id, name, status, description, category, price, subscription_price, note')
+          .eq('id', id)
+          .single(),
+        supabase
+          .from('service_images')
+          .select('url')
+          .eq('service_id', id)
+          .order('sort_order', { ascending: true }),
+      ])
 
-      if (!error && data) {
-        const loaded: ServiceForm = {
-          name: data.name ?? '',
-          status: data.status === 'draft' ? 'draft' : data.status === 'inactive' ? 'inactive' : 'active',
-          description: data.description ?? '',
-          category: data.category ?? '',
-          price: data.price != null ? String(data.price) : '',
-          subscriptionPrice: data.subscription_price != null ? String(data.subscription_price) : '',
-          durationMinutes: data.duration_minutes != null ? String(data.duration_minutes) : '',
-          imageUrl: data.image_url ?? null,
-        }
-        setForm(loaded)
-        setOriginalForm(loaded)
-        if (data.image_url) {
-          const parts = data.image_url.split('/')
-          setImageFileName(parts[parts.length - 1] ?? null)
-        }
+      if (!error && row) {
+        setData({
+          name: row.name ?? '',
+          status: row.status === 'draft' ? 'draft' : row.status === 'inactive' ? 'inactive' : 'active',
+          description: row.description ?? '',
+          category: row.category ?? '',
+          price: row.price != null ? String(row.price) : '',
+          subscriptionPrice: row.subscription_price != null ? String(row.subscription_price) : '',
+          note: row.note ?? '',
+        })
       }
+      if (imgs) setImages(imgs.map(r => r.url))
       setIsLoading(false)
     }
 
     load()
   }, [id, isCreate])
 
-  function setField<K extends keyof ServiceForm>(key: K, value: ServiceForm[K]) {
-    setForm(prev => ({ ...prev, [key]: value }))
-    if (!isCreate) setIsDirty(true)
+  async function updateService(payload: Record<string, unknown>) {
+    const { error } = await supabase
+      .from('services')
+      .update(payload)
+      .eq('id', id!)
+
+    if (error) {
+      toast.error('Failed to save')
+      return false
+    }
+    return true
   }
 
-  function handleCancel() {
-    setForm(originalForm)
-    setIsDirty(false)
+  // --- Drawer save handlers ---
+
+  async function handleStatusSave(status: Status) {
+    if (isCreate) {
+      setData(prev => ({ ...prev, status }))
+      return
+    }
+    const ok = await updateService({ status })
+    if (ok) setData(prev => ({ ...prev, status }))
   }
 
-  function handleStatusChange(newStatus: 'active' | 'draft' | 'inactive') {
-    setStatusOpen(false)
-    setField('status', newStatus)
+  async function handleNameDescriptionSave({ name, description }: { name: string; description: string }) {
+    if (isCreate) {
+      if (!businessId) return
+      const priceVal = data.price ? parseFloat(data.price) : null
+      const subPriceVal = data.subscriptionPrice ? parseFloat(data.subscriptionPrice) : null
+
+      const { data: inserted, error } = await supabase
+        .from('services')
+        .insert({
+          business_id: businessId,
+          source: 'manual',
+          name,
+          description: description || null,
+          status: data.status,
+          category: data.category || null,
+          price: priceVal,
+          price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
+          subscription_price: subPriceVal,
+          note: data.note || null,
+        })
+        .select()
+
+      if (error) {
+        toast.error('Failed to create service')
+        return
+      }
+
+      toast.success('Service created')
+      navigate(`/services/${inserted![0].id}`, { replace: true })
+      return
+    }
+
+    const ok = await updateService({ name, description: description || null })
+    if (ok) setData(prev => ({ ...prev, name, description }))
+    setOpenDrawer(null)
   }
 
-  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePricingSave({ price, subscriptionPrice }: { price: string; subscriptionPrice: string }) {
+    if (isCreate) {
+      setData(prev => ({ ...prev, price, subscriptionPrice }))
+      setOpenDrawer(null)
+      return
+    }
+    const priceVal = price ? parseFloat(price) : null
+    const subPriceVal = subscriptionPrice ? parseFloat(subscriptionPrice) : null
+    const ok = await updateService({
+      price: priceVal,
+      price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
+      subscription_price: subPriceVal,
+    })
+    if (ok) setData(prev => ({ ...prev, price, subscriptionPrice }))
+    setOpenDrawer(null)
+  }
+
+  async function handleCategorySave(category: string) {
+    if (isCreate) {
+      setData(prev => ({ ...prev, category }))
+      return
+    }
+    const ok = await updateService({ category: category || null })
+    if (ok) setData(prev => ({ ...prev, category }))
+  }
+
+  async function handleNoteSave(note: string) {
+    if (isCreate) {
+      setData(prev => ({ ...prev, note }))
+      setOpenDrawer(null)
+      return
+    }
+    const ok = await updateService({ note: note || null })
+    if (ok) setData(prev => ({ ...prev, note }))
+    setOpenDrawer(null)
+  }
+
+  // --- Inline image upload ---
+
+  async function handleInlineUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
-
-    setIsUploading(true)
-    setImageFileName(file.name)
+    if (!file || !id || isCreate) return
+    e.target.value = ''
 
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-    const { data, error } = await supabase.storage
+    const { data: uploaded, error } = await supabase.storage
       .from('service-images')
       .upload(path, file, { upsert: true })
 
-    if (error) {
-      toast.error('Failed to upload image')
-      setImageFileName(null)
-    } else {
-      const { data: urlData } = supabase.storage
-        .from('service-images')
-        .getPublicUrl(data.path)
-      setField('imageUrl', urlData.publicUrl)
-    }
+    if (error) { toast.error('Failed to upload image'); return }
 
-    setIsUploading(false)
+    const { data: urlData } = supabase.storage.from('service-images').getPublicUrl(uploaded.path)
+    const url = urlData.publicUrl
+
+    const { error: insertError } = await supabase
+      .from('service_images')
+      .insert({ service_id: id, url, sort_order: images.length })
+
+    if (insertError) { toast.error('Failed to save image'); return }
+
+    setImages(prev => [...prev, url])
   }
 
-  async function handleSave() {
-    if (!form.name.trim()) {
-      toast.error('Service name is required')
-      return
-    }
-
-    setIsSaving(true)
-
-    const priceVal = form.price ? parseFloat(form.price) : null
-    const subPriceVal = form.subscriptionPrice ? parseFloat(form.subscriptionPrice) : null
-    const durationVal = form.durationMinutes ? parseInt(form.durationMinutes, 10) : null
-
-    const payload = {
-      name: form.name.trim(),
-      status: form.status,
-      description: form.description.trim() || null,
-      category: form.category || null,
-      price: priceVal,
-      price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
-      subscription_price: subPriceVal,
-      duration_minutes: durationVal,
-      image_url: form.imageUrl,
-    }
-
-    if (isCreate) {
-      if (!businessId) { setIsSaving(false); return }
-      const { error, data } = await supabase
-        .from('services')
-        .insert({ ...payload, business_id: businessId, source: 'manual' })
-        .select()
-
-      console.log('[ServiceForm] insert:', { data, error })
-      if (error) {
-        toast.error('Failed to save service')
-      } else {
-        toast.success('Service created')
-        navigate('/services')
-      }
-    } else {
-      const { error, data } = await supabase
-        .from('services')
-        .update(payload)
-        .eq('id', id!)
-        .select()
-
-      console.log('[ServiceForm] update:', { id, data, error })
-      if (error) {
-        toast.error('Failed to save service')
-      } else {
-        toast.success('Service updated')
-        setOriginalForm(form)
-        setIsDirty(false)
-        navigate('/services')
-      }
-    }
-
-    setIsSaving(false)
-  }
+  // --- Duplicate / Delete ---
 
   async function handleDelete() {
     if (!window.confirm('Delete this service?')) return
-
-    const { error, count } = await supabase
-      .from('services')
-      .delete()
-      .eq('id', id!)
-
-    console.log('[ServiceForm] delete:', { id, error, count })
+    const { error } = await supabase.from('services').delete().eq('id', id!)
     if (error) {
       toast.error('Failed to delete service')
     } else {
@@ -241,30 +275,22 @@ export default function ServiceFormPage() {
   }
 
   async function handleDuplicate() {
-    const priceVal = form.price ? parseFloat(form.price) : null
-    const subPriceVal = form.subscriptionPrice ? parseFloat(form.subscriptionPrice) : null
-    const durationVal = form.durationMinutes ? parseInt(form.durationMinutes, 10) : null
-
     if (!businessId) return
+    const priceVal = data.price ? parseFloat(data.price) : null
+    const subPriceVal = data.subscriptionPrice ? parseFloat(data.subscriptionPrice) : null
+    const { error } = await supabase.from('services').insert({
+      business_id: businessId,
+      source: 'manual',
+      name: `${data.name} (copy)`,
+      status: data.status,
+      description: data.description || null,
+      category: data.category || null,
+      price: priceVal,
+      price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
+      subscription_price: subPriceVal,
+      note: data.note || null,
+    })
 
-    const { error, data } = await supabase
-      .from('services')
-      .insert({
-        business_id: businessId,
-        source: 'manual',
-        name: `${form.name.trim()} (copy)`,
-        status: form.status,
-        description: form.description.trim() || null,
-        category: form.category || null,
-        price: priceVal,
-        price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
-        subscription_price: subPriceVal,
-        duration_minutes: durationVal,
-        image_url: form.imageUrl,
-      })
-      .select()
-
-    console.log('[ServiceForm] duplicate:', { data, error })
     if (error) {
       toast.error('Failed to duplicate service')
     } else {
@@ -273,7 +299,12 @@ export default function ServiceFormPage() {
     }
   }
 
-  const currentStatus = STATUS_OPTIONS.find(o => o.value === form.status) ?? STATUS_OPTIONS[0]
+  // --- Formatted display values ---
+
+  function priceDisplay() {
+    if (!data.price) return null
+    return `$${parseFloat(data.price).toFixed(2)}`
+  }
 
   if (isLoading) {
     return (
@@ -283,213 +314,148 @@ export default function ServiceFormPage() {
     )
   }
 
-  // Header variants
-  const header = isCreate || (isDirty) ? (
-    // Create mode or edit-with-changes: Cancel + Save
-    <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
-      <button
-        className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950"
-        onClick={isCreate ? () => navigate(-1) : handleCancel}
-      >
-        Cancel
-      </button>
-      <button
-        className="h-9 px-4 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-950 disabled:opacity-50"
-        onClick={handleSave}
-        disabled={isSaving}
-      >
-        {isSaving ? 'Saving…' : 'Save'}
-      </button>
-    </div>
-  ) : (
-    // Edit mode, no changes: back + share + ellipsis
-    <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
-      <button
-        className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
-        onClick={() => navigate(-1)}
-      >
-        <ChevronLeft className="w-4 h-4 text-zinc-700" />
-      </button>
-      <div className="flex items-center gap-2">
-        <button className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg">
-          <Share2 className="w-4 h-4 text-zinc-700" />
-        </button>
+  return (
+    <div className="flex flex-col min-h-screen bg-zinc-50">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-14 pb-4 bg-white">
         <button
           className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
-          onClick={() => setActionSheetOpen(true)}
+          onClick={() => navigate(-1)}
         >
-          <Ellipsis className="w-4 h-4 text-zinc-700" />
+          <ChevronLeft className="w-4 h-4 text-zinc-700" />
         </button>
-      </div>
-    </div>
-  )
-
-  return (
-    <div className="flex flex-col min-h-screen bg-white">
-      {header}
-
-      {/* Form body */}
-      <div className="flex-1 px-4 flex flex-col gap-6 pt-6 pb-32">
-
-        {/* Service status */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Service status</p>
-          <div className="relative">
+        <div className="flex items-center gap-2">
+          <button className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg">
+            <Share2 className="w-4 h-4 text-zinc-700" />
+          </button>
+          {!isCreate && (
             <button
-              className="flex items-center gap-2 w-full h-9 px-3 border border-[#d4d4d4] rounded-lg bg-white text-left shadow-[0_1px_2px_rgba(0,0,0,0)]"
-              onClick={() => setStatusOpen(prev => !prev)}
+              className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+              onClick={() => setActionSheetOpen(true)}
             >
-              <span
-                className="w-4 h-4 rounded shrink-0"
-                style={{ backgroundColor: currentStatus.color }}
-              />
-              <span className="flex-1 text-sm text-zinc-950">{currentStatus.label}</span>
-              <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" />
+              <Ellipsis className="w-4 h-4 text-zinc-700" />
             </button>
+          )}
+        </div>
+      </div>
 
-            {statusOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setStatusOpen(false)} />
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-lg shadow-md z-20 overflow-hidden">
-                  {STATUS_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      className="flex items-center gap-2 w-full px-3 py-2.5 hover:bg-zinc-50 transition-colors"
-                      onClick={() => handleStatusChange(opt.value)}
-                    >
-                      <span
-                        className="w-4 h-4 rounded shrink-0"
-                        style={{ backgroundColor: opt.color }}
-                      />
-                      <span className="flex-1 text-sm text-zinc-950 text-left">{opt.label}</span>
-                      {form.status === opt.value && (
-                        <span className="text-xs text-zinc-400">✓</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+      {/* Body */}
+      <div className="flex flex-col gap-3 pb-32">
+
+        {/* Basic information */}
+        <div className="bg-white px-4">
+          <div className="flex items-center h-8">
+            <p className="text-base font-semibold text-zinc-950">Basic information</p>
+          </div>
+          <div>
+            {/* Status */}
+            <PropertyRow
+              label="Service status"
+              right={
+                <span
+                  className="px-2 py-0.5 rounded-lg text-xs font-semibold text-white shrink-0"
+                  style={{ backgroundColor: STATUS_COLOR[data.status] }}
+                >
+                  {STATUS_LABEL[data.status]}
+                </span>
+              }
+              onClick={() => setOpenDrawer('status')}
+            />
+            <Divider />
+
+            {/* Name */}
+            <PropertyRow
+              label={data.name || <span className="text-zinc-400">Name</span>}
+              onClick={() => setOpenDrawer('nameDescription')}
+            />
+            <Divider />
+
+            {/* Description */}
+            <PropertyRow
+              label={data.description || <span className="text-zinc-400">Description</span>}
+              onClick={() => setOpenDrawer('nameDescription')}
+            />
+            <Divider />
+
+            {/* Category */}
+            <PropertyRow
+              label={data.category || <span className="text-zinc-400">Category</span>}
+              onClick={() => setOpenDrawer('category')}
+            />
+            <Divider />
+
+            {/* Price */}
+            <PropertyRow
+              label={priceDisplay() || <span className="text-zinc-400">Price</span>}
+              onClick={() => setOpenDrawer('pricing')}
+            />
           </div>
         </div>
 
-        {/* Name */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Name</p>
-          <input
-            type="text"
-            placeholder="Service name"
-            className="h-9 px-3 border border-zinc-200 rounded-lg text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white shadow-[0_1px_2px_rgba(0,0,0,0)]"
-            value={form.name}
-            onChange={e => setField('name', e.target.value)}
-          />
-        </div>
-
-        {/* Image */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Image</p>
-          <div
-            className="flex items-center h-9 px-3 border border-zinc-200 rounded-lg bg-white shadow-[0_1px_2px_rgba(0,0,0,0)] cursor-pointer gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <span className="text-sm font-medium text-zinc-950 shrink-0">
-              {isUploading ? 'Uploading…' : 'Choose File'}
-            </span>
-            <span className="text-sm text-zinc-400 truncate">
-              {imageFileName ?? 'No file chosen'}
-            </span>
+        {/* Media */}
+        {!isCreate && (
+          <div className="bg-white px-4 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-base font-semibold text-zinc-950">Media</p>
+              {images.length > 0 && (
+                <button
+                  className="text-sm font-medium text-zinc-500"
+                  onClick={() => setOpenDrawer('media')}
+                >
+                  See all
+                </button>
+              )}
+            </div>
+            {images.length > 0 ? (
+              <div className="grid grid-cols-4 gap-3">
+                {images.slice(0, 4).map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt=""
+                    className="w-20 h-20 object-cover rounded-lg bg-zinc-100 cursor-pointer"
+                    onClick={() => setOpenDrawer('media')}
+                  />
+                ))}
+              </div>
+            ) : (
+              <button
+                className="flex flex-col items-center justify-center gap-2 w-full h-40 rounded-lg border border-dashed border-zinc-200"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImagePlus className="w-6 h-6 text-zinc-950" />
+                <span className="text-sm font-medium text-zinc-950">Add images</span>
+              </button>
+            )}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               className="hidden"
-              onChange={handleImageChange}
+              onChange={handleInlineUpload}
             />
           </div>
-          {form.imageUrl && (
-            <img
-              src={form.imageUrl}
-              alt="Service preview"
-              className="mt-1 h-20 w-20 object-cover rounded-lg border border-zinc-200"
-            />
-          )}
-        </div>
+        )}
 
-        {/* Description */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Description</p>
-          <textarea
-            placeholder="Add service description"
-            rows={3}
-            className="px-3 py-2 border border-zinc-200 rounded-lg text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white resize-none shadow-[0_1px_2px_rgba(0,0,0,0)]"
-            value={form.description}
-            onChange={e => setField('description', e.target.value)}
-          />
-        </div>
-
-        {/* Category */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Category</p>
-          <Select value={form.category || undefined} onValueChange={v => setField('category', v)}>
-            <SelectTrigger className="h-9 border-[#d4d4d4] shadow-[0_1px_2px_rgba(0,0,0,0)] text-sm">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map(cat => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Price */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Price</p>
-          <div className="flex items-center h-9 border border-zinc-200 rounded-lg bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0)]">
-            <span className="pl-3 pr-1 text-sm text-zinc-400 shrink-0">$</span>
-            <input
-              type="number"
-              placeholder="0"
-              min="0"
-              step="0.01"
-              className="flex-1 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none bg-transparent"
-              value={form.price}
-              onChange={e => setField('price', e.target.value)}
-            />
+        {/* Note */}
+        <div className="bg-white px-4">
+          <div className="flex items-center h-8 mt-2">
+            <p className="text-base font-semibold text-zinc-950">Note</p>
           </div>
-        </div>
-
-        {/* Subscription price */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Subscription price</p>
-          <div className="flex items-center h-9 border border-zinc-200 rounded-lg bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0)]">
-            <span className="pl-3 pr-1 text-sm text-zinc-400 shrink-0">$</span>
-            <input
-              type="number"
-              placeholder="0"
-              min="0"
-              step="0.01"
-              className="flex-1 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none bg-transparent"
-              value={form.subscriptionPrice}
-              onChange={e => setField('subscriptionPrice', e.target.value)}
+          <div>
+            <PropertyRow
+              label={
+                data.note
+                  ? <span className="text-zinc-600 truncate">{data.note}</span>
+                  : (
+                    <span className="flex items-center gap-2 text-zinc-500 font-medium text-sm">
+                      <CirclePlus className="w-5 h-5 shrink-0" />
+                      Add note
+                    </span>
+                  )
+              }
+              onClick={() => setOpenDrawer('note')}
             />
-          </div>
-        </div>
-
-        {/* Duration */}
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-950">Duration</p>
-          <div className="flex items-center h-9 border border-zinc-200 rounded-lg bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0)]">
-            <input
-              type="number"
-              placeholder="0"
-              min="0"
-              step="1"
-              className="flex-1 pl-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none bg-transparent"
-              value={form.durationMinutes}
-              onChange={e => setField('durationMinutes', e.target.value)}
-            />
-            <span className="pr-3 pl-1 text-sm text-zinc-400 shrink-0">Minutes</span>
           </div>
         </div>
 
@@ -497,13 +463,56 @@ export default function ServiceFormPage() {
 
       <BottomNav active="services" />
 
-      {/* Action sheet (edit mode only) */}
+      {/* Action sheet */}
       {!isCreate && (
         <ActionSheet
           open={actionSheetOpen}
           onClose={() => setActionSheetOpen(false)}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
+        />
+      )}
+
+      {/* Drawers */}
+      <StatusDrawer
+        open={openDrawer === 'status'}
+        onOpenChange={open => setOpenDrawer(open ? 'status' : null)}
+        value={data.status}
+        onSave={handleStatusSave}
+      />
+      <NameDescriptionDrawer
+        open={openDrawer === 'nameDescription'}
+        onOpenChange={open => setOpenDrawer(open ? 'nameDescription' : null)}
+        name={data.name}
+        description={data.description}
+        onSave={handleNameDescriptionSave}
+      />
+      <PricingDrawer
+        open={openDrawer === 'pricing'}
+        onOpenChange={open => setOpenDrawer(open ? 'pricing' : null)}
+        price={data.price}
+        subscriptionPrice={data.subscriptionPrice}
+        onSave={handlePricingSave}
+      />
+      <CategoryDrawer
+        open={openDrawer === 'category'}
+        onOpenChange={open => setOpenDrawer(open ? 'category' : null)}
+        value={data.category}
+        onSave={handleCategorySave}
+      />
+      <NoteDrawer
+        open={openDrawer === 'note'}
+        onOpenChange={open => setOpenDrawer(open ? 'note' : null)}
+        value={data.note}
+        onSave={handleNoteSave}
+      />
+      {!isCreate && (
+        <MediaDrawer
+          open={openDrawer === 'media'}
+          onOpenChange={open => setOpenDrawer(open ? 'media' : null)}
+          serviceId={id!}
+          images={images}
+          onImagesChange={setImages}
         />
       )}
     </div>

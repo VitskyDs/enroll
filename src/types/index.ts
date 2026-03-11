@@ -21,6 +21,7 @@ export interface Service {
   category?: string
   status?: 'active' | 'draft' | 'inactive'
   image_url?: string | null
+  note?: string | null
   business_id?: string
   created_at?: string
 }
