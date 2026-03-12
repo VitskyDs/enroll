@@ -9,62 +9,83 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   customerId: string
-  name: string
+  firstName: string
+  lastName: string
   email: string | null
   phone: string | null
-  onSave: (values: { name: string; email: string | null; phone: string | null }) => void
+  onSave: (values: {
+    firstName: string
+    lastName: string
+    name: string
+    email: string | null
+    phone: string | null
+  }) => void
 }
 
 export function CustomerContactDrawer({
   open,
   onOpenChange,
   customerId,
-  name,
+  firstName,
+  lastName,
   email,
   phone,
   onSave,
 }: Props) {
-  const [localName, setLocalName] = useState(name)
+  const [localFirstName, setLocalFirstName] = useState(firstName)
+  const [localLastName, setLocalLastName] = useState(lastName)
   const [localEmail, setLocalEmail] = useState(email ?? '')
   const [localPhone, setLocalPhone] = useState(phone ?? '')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setLocalName(name)
+      setLocalFirstName(firstName)
+      setLocalLastName(lastName)
       setLocalEmail(email ?? '')
       setLocalPhone(phone ?? '')
     }
-  }, [open, name, email, phone])
+  }, [open, firstName, lastName, email, phone])
 
   const isDirty =
-    localName.trim() !== name.trim() ||
+    localFirstName.trim() !== firstName.trim() ||
+    localLastName.trim() !== lastName.trim() ||
     (localEmail.trim() || null) !== email ||
     (localPhone.trim() || null) !== phone
 
   function handleCancel() {
-    setLocalName(name)
+    setLocalFirstName(firstName)
+    setLocalLastName(lastName)
     setLocalEmail(email ?? '')
     setLocalPhone(phone ?? '')
     onOpenChange(false)
   }
 
   async function handleSave() {
-    if (!localName.trim()) return
+    if (!localFirstName.trim()) return
     setSaving(true)
 
+    const newFirstName = localFirstName.trim()
+    const newLastName = localLastName.trim() || null
+    const newName = [newFirstName, newLastName].filter(Boolean).join(' ')
     const newEmail = localEmail.trim() || null
     const newPhone = localPhone.trim() || null
 
     const { error } = await supabase
       .from('customers')
-      .update({ name: localName.trim(), email: newEmail, phone: newPhone })
+      .update({
+        first_name: newFirstName,
+        last_name: newLastName,
+        name: newName,
+        email: newEmail,
+        phone: newPhone,
+      })
       .eq('id', customerId)
 
     if (error) {
       toast.error('Failed to save')
     } else {
-      onSave({ name: localName.trim(), email: newEmail, phone: newPhone })
+      onSave({ firstName: newFirstName, lastName: newLastName ?? '', name: newName, email: newEmail, phone: newPhone })
       onOpenChange(false)
     }
 
@@ -87,12 +108,20 @@ export function CustomerContactDrawer({
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-zinc-500">Name</label>
+          <label className="text-sm font-medium text-zinc-500">First name</label>
           <Input
-            value={localName}
-            onChange={e => setLocalName(e.target.value)}
-            placeholder="Customer name"
+            value={localFirstName}
+            onChange={e => setLocalFirstName(e.target.value)}
+            placeholder="First name"
             autoFocus
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-zinc-500">Last name</label>
+          <Input
+            value={localLastName}
+            onChange={e => setLocalLastName(e.target.value)}
+            placeholder="Last name"
           />
         </div>
         <div className="flex flex-col gap-1">

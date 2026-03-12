@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase'
 
 interface CustomerData {
   id: string
+  first_name: string
+  last_name: string | null
   name: string
   email: string | null
   phone: string | null
@@ -123,7 +125,7 @@ export default function CustomerPage() {
       setIsLoading(true)
       const { data, error } = await supabase
         .from('customers')
-        .select('id, name, email, phone, status, points, tier, joined_at, note')
+        .select('id, first_name, last_name, name, email, phone, status, points, tier, joined_at, note')
         .eq('id', id)
         .single()
 
@@ -168,76 +170,82 @@ export default function CustomerPage() {
     )
   }
 
+  const fullName = customer.last_name
+    ? `${customer.first_name} ${customer.last_name}`
+    : customer.first_name
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-zinc-100">
-      {/* Header — always static */}
-      <div className="flex items-center justify-between px-4 pt-safe pb-4 bg-white shrink-0">
-        <button
-          className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
-          onClick={() => navigate(-1)}
-        >
-          <ChevronLeft className="w-4 h-4 text-zinc-700" />
-        </button>
-        <button
-          className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
-          onClick={() => setActionSheetOpen(true)}
-        >
-          <Ellipsis className="w-4 h-4 text-zinc-700" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3 pb-28">
-        {/* Hero */}
-        <div className="bg-white px-4 pt-4 pb-5 flex flex-col gap-1">
-          <button className="text-left" onClick={() => setOpenDrawer('contact')}>
-            <p className="text-2xl font-semibold text-zinc-950 tracking-tight">{customer.name}</p>
-          </button>
-          <p className="text-sm text-zinc-500">Since {formatDate(customer.joined_at)}</p>
-          <div className="flex items-center gap-2 mt-1.5">
-            {customer.tier && <TierBadge tier={customer.tier} />}
-            <StatusBadge status={customer.status} onClick={() => setOpenDrawer('status')} />
-          </div>
-        </div>
-
-        {/* Contact information */}
-        <div className="bg-white px-4">
-          <p className="text-base font-semibold text-zinc-950 py-3">Contact information</p>
-          <ContactRow
-            value={customer.email}
-            placeholder="No email"
-            onClick={() => setOpenDrawer('contact')}
-          />
-          <Divider />
-          <ContactRow
-            value={customer.phone}
-            placeholder="No phone"
-            onClick={() => setOpenDrawer('contact')}
-          />
-        </div>
-
-        {/* Loyalty */}
-        <div className="bg-white px-4">
-          <p className="text-base font-semibold text-zinc-950 py-3">Loyalty</p>
-          <LoyaltyRow label="Tier" value={customer.tier ?? '—'} />
-          <Divider />
-          <LoyaltyRow label="Points" value={String(customer.points)} />
-        </div>
-
-        {/* Note */}
-        <div className="bg-white px-4">
-          <p className="text-base font-semibold text-zinc-950 py-3">Note</p>
+      <div className="flex-1 overflow-y-auto">
+        {/* Header — scrolls with content */}
+        <div className="flex items-center justify-between px-4 pt-safe pb-4 bg-white">
           <button
-            className="flex items-center gap-2 w-full py-3"
-            onClick={() => setOpenDrawer('note')}
+            className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+            onClick={() => navigate(-1)}
           >
-            {!customer.note && (
-              <CirclePlus className="w-5 h-5 text-zinc-400 shrink-0" />
-            )}
-            <span className={`flex-1 text-sm text-left ${customer.note ? 'text-zinc-950' : 'text-zinc-400'}`}>
-              {customer.note || 'Add note'}
-            </span>
-            <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0" />
+            <ChevronLeft className="w-4 h-4 text-zinc-700" />
           </button>
+          <button
+            className="flex items-center justify-center w-9 h-9 bg-zinc-100 rounded-lg"
+            onClick={() => setActionSheetOpen(true)}
+          >
+            <Ellipsis className="w-4 h-4 text-zinc-700" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3 mt-3 pb-28">
+          {/* Hero */}
+          <div className="bg-white px-4 pt-4 pb-5 flex flex-col gap-1">
+            <button className="text-left" onClick={() => setOpenDrawer('contact')}>
+              <p className="text-2xl font-semibold text-zinc-950 tracking-tight">{fullName}</p>
+            </button>
+            <p className="text-sm text-zinc-500">Since {formatDate(customer.joined_at)}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              {customer.tier && <TierBadge tier={customer.tier} />}
+              <StatusBadge status={customer.status} onClick={() => setOpenDrawer('status')} />
+            </div>
+          </div>
+
+          {/* Contact information */}
+          <div className="bg-white px-4">
+            <p className="text-base font-semibold text-zinc-950 py-3">Contact information</p>
+            <ContactRow
+              value={customer.email}
+              placeholder="No email"
+              onClick={() => setOpenDrawer('contact')}
+            />
+            <Divider />
+            <ContactRow
+              value={customer.phone}
+              placeholder="No phone"
+              onClick={() => setOpenDrawer('contact')}
+            />
+          </div>
+
+          {/* Loyalty */}
+          <div className="bg-white px-4">
+            <p className="text-base font-semibold text-zinc-950 py-3">Loyalty</p>
+            <LoyaltyRow label="Tier" value={customer.tier ?? '—'} />
+            <Divider />
+            <LoyaltyRow label="Points" value={String(customer.points)} />
+          </div>
+
+          {/* Note */}
+          <div className="bg-white px-4">
+            <p className="text-base font-semibold text-zinc-950 py-3">Note</p>
+            <button
+              className="flex items-center gap-2 w-full py-3"
+              onClick={() => setOpenDrawer('note')}
+            >
+              {!customer.note && (
+                <CirclePlus className="w-5 h-5 text-zinc-400 shrink-0" />
+              )}
+              <span className={`flex-1 text-sm text-left ${customer.note ? 'text-zinc-950' : 'text-zinc-400'}`}>
+                {customer.note || 'Add note'}
+              </span>
+              <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -247,10 +255,24 @@ export default function CustomerPage() {
         open={openDrawer === 'contact'}
         onOpenChange={open => setOpenDrawer(open ? 'contact' : null)}
         customerId={customer.id}
-        name={customer.name}
+        firstName={customer.first_name}
+        lastName={customer.last_name ?? ''}
         email={customer.email}
         phone={customer.phone}
-        onSave={values => setCustomer(prev => prev ? { ...prev, ...values } : prev)}
+        onSave={values =>
+          setCustomer(prev =>
+            prev
+              ? {
+                  ...prev,
+                  first_name: values.firstName,
+                  last_name: values.lastName || null,
+                  name: values.name,
+                  email: values.email,
+                  phone: values.phone,
+                }
+              : prev
+          )
+        }
       />
 
       <CustomerStatusDrawer
@@ -258,7 +280,7 @@ export default function CustomerPage() {
         onOpenChange={open => setOpenDrawer(open ? 'status' : null)}
         customerId={customer.id}
         value={customer.status}
-        onSave={status => setCustomer(prev => prev ? { ...prev, status } : prev)}
+        onSave={status => setCustomer(prev => (prev ? { ...prev, status } : prev))}
       />
 
       <CustomerNoteDrawer
@@ -266,7 +288,7 @@ export default function CustomerPage() {
         onOpenChange={open => setOpenDrawer(open ? 'note' : null)}
         customerId={customer.id}
         value={customer.note ?? ''}
-        onSave={note => setCustomer(prev => prev ? { ...prev, note: note || null } : prev)}
+        onSave={note => setCustomer(prev => (prev ? { ...prev, note: note || null } : prev))}
       />
 
       <ActionSheet
