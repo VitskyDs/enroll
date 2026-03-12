@@ -4,7 +4,7 @@ import { Search, ArrowUpDown, ListFilter, HandHeart } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import { ResourceScreen } from '@/components/resource/ResourceScreen'
-import { ResourceListItem, ACTIVE_COLOR, DRAFT_COLOR } from '@/components/resource/ResourceListItem'
+import { ResourceListItem } from '@/components/resource/ResourceListItem'
 
 interface ServiceRow {
   id: string
@@ -15,7 +15,13 @@ interface ServiceRow {
   image_url: string | null
 }
 
-type FilterTab = 'all' | 'active' | 'draft'
+type FilterTab = 'all' | 'active' | 'draft' | 'inactive'
+
+const STATUS_BADGE: Record<string, { label: string; color: string }> = {
+  active:   { label: 'Active',   color: '#009689' },
+  draft:    { label: 'Draft',    color: '#a3a3a3' },
+  inactive: { label: 'Inactive', color: '#737373' },
+}
 
 export default function ServicesPage() {
   const navigate = useNavigate()
@@ -96,7 +102,7 @@ export default function ServicesPage() {
   // --- Filter tabs ---
   const filterTabs = (
     <div className="flex items-center">
-      {(['all', 'active', 'draft'] as FilterTab[]).map(tab => (
+      {(['all', 'active', 'draft', 'inactive'] as FilterTab[]).map(tab => (
         <button
           key={tab}
           className={`h-9 px-4 py-2 rounded-full text-sm font-medium leading-5 transition-colors ${
@@ -142,10 +148,7 @@ export default function ServicesPage() {
             imageUrl={svc.image_url}
             title={svc.name}
             subtitle={svc.price != null ? `$${Number(svc.price).toFixed(2)}` : '—'}
-            badge={{
-              label: svc.status === 'active' ? 'Active' : 'Draft',
-              color: svc.status === 'active' ? ACTIVE_COLOR : DRAFT_COLOR,
-            }}
+            badge={STATUS_BADGE[svc.status] ?? STATUS_BADGE.draft}
             onClick={() => navigate(`/services/${svc.id}`)}
           />
         )}
