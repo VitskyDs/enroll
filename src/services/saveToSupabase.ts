@@ -36,6 +36,7 @@ export async function saveToSupabase(
         duration_minutes: s.duration_minutes ?? null,
         category: s.category ?? null,
         source: 'ai_extracted',
+        status: 'draft',
       })),
     )
     if (svcError) console.error('Failed to save services:', svcError)
