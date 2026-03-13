@@ -1,10 +1,10 @@
 ---
 id: TASK-17
 title: Add products table to the database
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-05 20:57'
-updated_date: '2026-03-07 05:01'
+updated_date: '2026-03-12 19:49'
 labels: []
 milestone: m-3
 dependencies: []

@@ -11,6 +11,10 @@ export default function LandingPage() {
     navigate('/onboarding', { state: { userName: STUB_USER_NAME } })
   }
 
+  function goToDemo() {
+    navigate('/onboarding', { state: { demo: true } })
+  }
+
   return (
     <div className="relative flex flex-col h-screen bg-white">
       {/* Logo — vertically centered */}
@@ -50,6 +54,14 @@ export default function LandingPage() {
             Already have an account?{' '}
             <span className="font-bold cursor-pointer">Sign in</span>
           </p>
+          {import.meta.env.DEV && (
+            <button
+              onClick={goToDemo}
+              className="text-xs text-zinc-400 underline underline-offset-2 text-center mt-1"
+            >
+              dev: demo flow
+            </button>
+          )}
         </div>
       </div>
     </div>

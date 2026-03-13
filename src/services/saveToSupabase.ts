@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { BusinessCategory, LoyaltyGoal, LoyaltyProgram, Service } from '@/types'
+import type { BusinessOnboardingData, LoyaltyProgram, Service } from '@/types'
 
 /**
  * Persists a completed onboarding session to Supabase:
@@ -9,16 +9,25 @@ import type { BusinessCategory, LoyaltyGoal, LoyaltyProgram, Service } from '@/t
  * 4. Update businesses.loyalty_program_id with the new program id
  */
 export async function saveToSupabase(
-  businessName: string,
-  businessCategory: BusinessCategory,
-  websiteUrl: string,
-  goal: LoyaltyGoal,
+  onboardingData: BusinessOnboardingData,
   services: Service[],
   program: LoyaltyProgram,
 ): Promise<{ business_id: string; program_id: string }> {
   const { data: business, error: bizError } = await supabase
     .from('businesses')
-    .insert({ name: businessName, category: businessCategory, website_url: websiteUrl || null, goal })
+    .insert({
+      name: onboardingData.business_name,
+      website_url: onboardingData.website || null,
+      offering_type: onboardingData.offering_type,
+      industry: onboardingData.industry,
+      brand_personality: onboardingData.brand_personality,
+      primary_goal: onboardingData.primary_goal,
+      visit_frequency: onboardingData.visit_frequency,
+      spend_variance: onboardingData.spend_variance,
+      // Legacy columns — set defaults for DB compat
+      category: 'other',
+      goal: onboardingData.primary_goal === 'acquire' ? 'referrals' : onboardingData.primary_goal === 'retain' ? 'retention' : 'frequency',
+    })
     .select('id')
     .single()
 
@@ -46,13 +55,20 @@ export async function saveToSupabase(
     .from('loyalty_programs')
     .insert({
       business_id,
+      program_type: program.program_type,
+      industry: program.industry,
       program_name: program.program_name,
       currency_name: program.currency_name,
       earn_rules: program.earn_rules,
+      redemption_rules: program.redemption_rules,
       reward_tiers: program.reward_tiers,
+      tier_progression_rules: program.tier_progression_rules,
+      points_expiry_rules: program.points_expiry_rules,
       bonus_rules: program.bonus_rules,
       referral_description: program.referral_description,
       brand_voice_summary: program.brand_voice_summary,
+      llm_customization_hints: program.llm_customization_hints,
+      terms_and_conditions: program.terms_and_conditions,
       ai_generated: true,
     })
     .select('id')

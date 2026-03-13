@@ -5,37 +5,37 @@ import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import type { LoyaltyProgram } from '@/types'
 
-type FeatureKey = 'currency' | 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'brand-voice'
+type FeatureKey = 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'referral' | 'brand-voice'
 
 function shortDescription(program: LoyaltyProgram, key: FeatureKey): string {
   switch (key) {
-    case 'currency':
-      return 'Your loyalty currency'
-    case 'earn-rules': {
-      const first = program.earn_rules[0]
-      return first?.label ?? `${program.earn_rules.length} earn rules`
-    }
-    case 'reward-tiers': {
-      const first = program.reward_tiers[0]
-      return first?.name ?? `${program.reward_tiers.length} reward tiers`
-    }
-    case 'bonus-rules': {
-      const first = program.bonus_rules[0]
-      return first?.label ?? `${program.bonus_rules.length} bonus rules`
-    }
+    case 'earn-rules':
+      return program.earn_rules?.base_rate ?? 'View earn rules'
+    case 'reward-tiers':
+      return Array.isArray(program.reward_tiers) && program.reward_tiers.length > 0
+        ? `${program.reward_tiers.length} tiers`
+        : 'No tiers'
+    case 'bonus-rules':
+      return Array.isArray(program.bonus_rules)
+        ? `${program.bonus_rules.length} bonus rules`
+        : 'View bonus rules'
+    case 'referral':
+      return program.referral_description
+        ? program.referral_description.slice(0, 60) + '…'
+        : 'View referral program'
     case 'brand-voice':
-      return program.brand_voice_summary.length > 60
+      return program.brand_voice_summary
         ? program.brand_voice_summary.slice(0, 60) + '…'
-        : program.brand_voice_summary
+        : 'View brand voice'
   }
 }
 
-const ROWS: { key: FeatureKey; label: (p: LoyaltyProgram) => string }[] = [
-  { key: 'currency', label: (p) => p.currency_name },
-  { key: 'earn-rules', label: () => 'Earn rules' },
-  { key: 'reward-tiers', label: () => 'Reward tiers' },
-  { key: 'bonus-rules', label: () => 'Bonus rules' },
-  { key: 'brand-voice', label: () => 'Brand voice' },
+const ROWS: { key: FeatureKey; label: string }[] = [
+  { key: 'earn-rules', label: 'Earn rules' },
+  { key: 'reward-tiers', label: 'Reward tiers' },
+  { key: 'bonus-rules', label: 'Bonus rules' },
+  { key: 'referral', label: 'Referral program' },
+  { key: 'brand-voice', label: 'Brand voice' },
 ]
 
 export default function ProgramPage() {
@@ -64,7 +64,7 @@ export default function ProgramPage() {
             {program?.program_name ?? '—'}
           </p>
           <p className="text-base text-zinc-500 leading-6">
-            This is your loyalty program, built to {program?.referral_description ?? '…'}
+            {program?.currency_name ?? '…'}
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function ProgramPage() {
                 onClick={() => navigate(`/program/${key}`, { state: { program } })}
               >
                 <div className="flex-1 flex flex-col gap-1 min-w-0">
-                  <p className="text-base font-semibold text-[#404040] leading-6">{label(program)}</p>
+                  <p className="text-base font-semibold text-[#404040] leading-6">{label}</p>
                   <p className="text-sm text-zinc-500 leading-5">{shortDescription(program, key)}</p>
                 </div>
                 <ChevronRight className="w-6 h-6 text-zinc-400 shrink-0 mt-0.5" />

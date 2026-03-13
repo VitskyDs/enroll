@@ -21,7 +21,7 @@ export function MessageList({ messages, isTyping, renderWidget }: Props) {
     <ScrollArea className="flex-1 min-h-0">
       <div className="px-4 pt-6 pb-2">
         {messages.map((msg) => {
-          const isStandalone = msg.widget === 'service_actions' || msg.widget === 'goal_selector' || msg.widget === 'program_done'
+          const isStandalone = msg.widget === 'service_actions'
           return (
             <div key={msg.id}>
               <ChatMessage message={msg}>

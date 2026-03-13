@@ -4,17 +4,19 @@ import { ChatInput } from './ChatInput'
 import type { ChatMessage, OnboardingStep } from '@/types'
 
 const STEP_PROGRESS: Record<OnboardingStep, number> = {
-  greeting: 10,
-  collect_url_or_name: 30,
-  searching: 45,
-  extracting: 55,
-  confirm_services: 65,
-  collect_goal: 78,
-  manual_entry: 45,
-  generating: 88,
-  saving: 92,
-  reviewing: 100,
-  done: 100,
+  // Phase 1 — Your business (0–33%)
+  greeting: 5,
+  collect_url_or_name: 15,
+  searching: 22,
+  extracting: 28,
+  confirm_services: 33,
+  manual_entry: 18,
+  // Phase 2 — Program inputs (33–66%)
+  collect_primary_goal: 45,
+  collect_visit_frequency: 55,
+  collect_spend_variance: 66,
+  // Phase 3 — Your program (66–100%)
+  show_recommendation: 100,
 }
 
 interface Props {
@@ -27,11 +29,12 @@ interface Props {
   title: string
   subtitle: string
   inputEnabled?: boolean
+  placeholder?: string
 }
 
-export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidget, title, subtitle, inputEnabled: inputEnabledProp }: Props) {
+export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidget, title, subtitle, inputEnabled: inputEnabledProp, placeholder }: Props) {
   const inputEnabled = inputEnabledProp ?? false
-  const progress = STEP_PROGRESS[step]
+  const progress = STEP_PROGRESS[step] ?? 10
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -59,7 +62,7 @@ export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidg
 
       <MessageList messages={messages} isTyping={isTyping} renderWidget={renderWidget} />
 
-      {inputEnabled && <ChatInput onSend={onSend} />}
+      {inputEnabled && <ChatInput onSend={onSend} placeholder={placeholder} />}
     </div>
   )
 }

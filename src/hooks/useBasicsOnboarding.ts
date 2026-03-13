@@ -3,9 +3,14 @@ import { anthropic } from '@/lib/anthropic'
 import { searchBusiness } from '@/services/searchBusiness'
 import { extractFromUrl } from '@/services/extractFromUrl'
 import { ONBOARDING_SYSTEM_PROMPT, ONBOARDING_TOOLS } from '@/prompts/onboardingAgent'
+import { DEMO_ONBOARDING_DATA, DEMO_SERVICES } from '@/data/demoData'
 import type Anthropic from '@anthropic-ai/sdk'
-import type { BusinessCategory, ChatMessage, LoyaltyGoal, OnboardingStep, Service } from '@/types'
+import type { BrandPersonality, BusinessCategory, ChatMessage, OfferingType, OnboardingStep, Service } from '@/types'
 import type { BusinessSearchResult } from '@/services/searchBusiness'
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
 
 function makeId() {
   return Math.random().toString(36).slice(2)
@@ -23,7 +28,11 @@ interface BasicsState {
   services: Service[]
   selectedServiceIds: Set<string>
   candidateUrls: BusinessSearchResult[]
-  goal: LoyaltyGoal | null
+  // New extracted fields
+  offering_type: OfferingType | null
+  industry: string | null
+  brand_personality: BrandPersonality | null
+  services_and_products: string | null
   messages: ChatMessage[]
   isTyping: boolean
 }
@@ -36,7 +45,10 @@ const INITIAL_STATE: BasicsState = {
   services: [],
   selectedServiceIds: new Set(),
   candidateUrls: [],
-  goal: null,
+  offering_type: null,
+  industry: null,
+  brand_personality: null,
+  services_and_products: null,
   messages: [],
   isTyping: false,
 }
@@ -53,7 +65,7 @@ type Action =
   | { type: 'SET_SERVICES'; services: Service[] }
   | { type: 'SET_SELECTED_IDS'; ids: Set<string> }
   | { type: 'SET_CANDIDATE_URLS'; urls: BusinessSearchResult[] }
-  | { type: 'SET_GOAL'; goal: LoyaltyGoal }
+  | { type: 'SET_EXTRACTED_FIELDS'; offering_type: OfferingType; industry: string; brand_personality: BrandPersonality | null; services_and_products: string }
 
 function reducer(state: BasicsState, action: Action): BasicsState {
   switch (action.type) {
@@ -74,7 +86,13 @@ function reducer(state: BasicsState, action: Action): BasicsState {
     case 'SET_SERVICES': return { ...state, services: action.services }
     case 'SET_SELECTED_IDS': return { ...state, selectedServiceIds: action.ids }
     case 'SET_CANDIDATE_URLS': return { ...state, candidateUrls: action.urls }
-    case 'SET_GOAL': return { ...state, goal: action.goal }
+    case 'SET_EXTRACTED_FIELDS': return {
+      ...state,
+      offering_type: action.offering_type,
+      industry: action.industry,
+      brand_personality: action.brand_personality,
+      services_and_products: action.services_and_products,
+    }
     default: return state
   }
 }
@@ -84,7 +102,10 @@ export interface OnCompleteData {
   businessCategory: BusinessCategory
   websiteUrl: string
   services: Service[]
-  goal?: LoyaltyGoal
+  offering_type: OfferingType
+  industry: string
+  brand_personality: BrandPersonality | null
+  services_and_products: string
 }
 
 export function useBasicsOnboarding(
@@ -98,6 +119,7 @@ export function useBasicsOnboarding(
   const llmMessagesRef = useRef<Anthropic.MessageParam[]>([])
   const pendingWidgetRef = useRef<ChatMessage['widget'] | undefined>(undefined)
   const shouldNavigateRef = useRef(false)
+  const hasStartedRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
 
@@ -135,10 +157,17 @@ export function useBasicsOnboarding(
           dispatch({ type: 'SET_CATEGORY', category: extracted.type })
           dispatch({ type: 'SET_SERVICES', services: extracted.services })
           dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(extracted.services.map((s) => s.id)) })
+          dispatch({
+            type: 'SET_EXTRACTED_FIELDS',
+            offering_type: extracted.offering_type,
+            industry: extracted.industry,
+            brand_personality: extracted.brand_personality,
+            services_and_products: extracted.services_and_products,
+          })
           dispatch({ type: 'SET_STEP', step: 'confirm_services' })
           pendingWidgetRef.current = 'service_selector'
           const names = extracted.services.map((s) => s.name).join(', ') || 'none found'
-          return `Extracted: business "${extracted.name}" (${extracted.type}), services: ${names}. Service selector shown to user. Summarize what you found in a friendly message, then wait for the user to confirm services.`
+          return `Extracted: business "${extracted.name}" (${extracted.type}, ${extracted.industry}), services: ${names}. Service selector shown to user. Summarize what you found briefly, then wait for confirmation.`
         } catch (err) {
           dispatch({ type: 'SET_STEP', step: 'manual_entry' })
           return `Could not extract data from ${url} (${err instanceof Error ? err.message : 'unknown error'}). Tell the user extraction failed and ask them to enter their business name, type, and top services manually. Then call submit_manual.`
@@ -155,20 +184,18 @@ export function useBasicsOnboarding(
           price_cents: s.price_cents ?? null,
           subscription_price_cents: null,
         }))
+        const industry = (input.industry as string) ?? 'other'
+        const offering_type = (input.offering_type as OfferingType) ?? 'service'
+        const services_and_products = (input.services_and_products as string) ?? services.map((s) => s.name).join(', ')
         dispatch({ type: 'SET_NAME', name })
         dispatch({ type: 'SET_CATEGORY', category: type })
         dispatch({ type: 'SET_SERVICES', services })
         dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(services.map((s) => s.id)) })
+        dispatch({ type: 'SET_EXTRACTED_FIELDS', offering_type, industry, brand_personality: null, services_and_products })
         dispatch({ type: 'SET_STEP', step: 'confirm_services' })
         pendingWidgetRef.current = 'service_selector'
         const names = services.map((s) => s.name).join(', ')
         return `Recorded: ${name} (${type}), services: ${names}. Service selector shown. Wait for the user to confirm.`
-      }
-
-      case 'submit_goal': {
-        dispatch({ type: 'SET_GOAL', goal: input.goal as LoyaltyGoal })
-        shouldNavigateRef.current = true
-        return 'Goal recorded. Tell the user you are now setting up their loyalty program.'
       }
 
       default:
@@ -247,7 +274,13 @@ export function useBasicsOnboarding(
         }
       }
     } catch (err) {
-      const errorContent = `Something went wrong: ${err instanceof Error ? err.message : 'unknown error'}. Please try again.`
+      let errorContent = 'Something went wrong. Please try again.'
+      if (err instanceof Error) {
+        const match = err.message.match(/"message":"([^"]+)"/)
+        if (match) {
+          errorContent = `${match[1]}`
+        }
+      }
       if (!hasAddedMessage) {
         dispatch({ type: 'ADD_MESSAGE', message: { id: assistantMsgId, role: 'assistant', content: errorContent, timestamp: new Date() } })
       } else {
@@ -266,15 +299,20 @@ export function useBasicsOnboarding(
         businessCategory: s.businessCategory ?? 'other',
         websiteUrl: s.websiteUrl,
         services: s.services.filter((sv) => s.selectedServiceIds.has(sv.id)),
-        goal: s.goal!,
+        offering_type: s.offering_type ?? 'service',
+        industry: s.industry ?? 'other',
+        brand_personality: s.brand_personality,
+        services_and_products: s.services_and_products ?? '',
       })
     }
   }, [handleToolCall])
 
   const start = useCallback(() => {
+    if (hasStartedRef.current) return
+    hasStartedRef.current = true
     dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
     const name = userName && userName !== 'there' ? userName : null
-    const greetingContent = name ? `Hi ${name} 👋` : 'Hi there 👋'
+    const greetingContent = name ? `Hi ${name}!` : 'Hi there!'
     const introContent = "I'm here to help you set up your loyalty program in just a few minutes. To get started, **what's your business name or website URL?**"
 
     dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: greetingContent, timestamp: new Date() } })
@@ -288,6 +326,50 @@ export function useBasicsOnboarding(
       ]
     }, 1200)
   }, [userName])
+
+  const startDemo = useCallback(async () => {
+    if (hasStartedRef.current) return
+    hasStartedRef.current = true
+    // Pre-load all demo data into state so confirmServices/continueToProgram read it
+    dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
+    dispatch({ type: 'SET_NAME', name: DEMO_ONBOARDING_DATA.business_name })
+    dispatch({ type: 'SET_WEBSITE', url: DEMO_ONBOARDING_DATA.website ?? '' })
+    dispatch({ type: 'SET_SERVICES', services: DEMO_SERVICES })
+    dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(DEMO_SERVICES.map((s) => s.id)) })
+    dispatch({
+      type: 'SET_EXTRACTED_FIELDS',
+      offering_type: DEMO_ONBOARDING_DATA.offering_type,
+      industry: DEMO_ONBOARDING_DATA.industry,
+      brand_personality: DEMO_ONBOARDING_DATA.brand_personality,
+      services_and_products: DEMO_ONBOARDING_DATA.services_and_products,
+    })
+
+    // Play canned conversation
+    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: 'Hi there!', timestamp: new Date() } })
+    dispatch({ type: 'SET_TYPING', value: true })
+    await delay(1000)
+    dispatch({ type: 'SET_TYPING', value: false })
+    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: "I'm here to help you set up your loyalty program in just a few minutes. To get started, **what's your business name or website URL?**", timestamp: new Date() } })
+
+    await delay(900)
+    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'user', content: 'luxestudio.com', timestamp: new Date() } })
+    dispatch({ type: 'SET_TYPING', value: true })
+    dispatch({ type: 'SET_STEP', step: 'extracting' })
+
+    await delay(1400)
+    dispatch({ type: 'SET_STEP', step: 'confirm_services' })
+    dispatch({ type: 'SET_TYPING', value: false })
+    dispatch({
+      type: 'ADD_MESSAGE',
+      message: {
+        id: makeId(),
+        role: 'assistant',
+        content: "I found **Luxe Studio** — a premium hair salon. Here are the services I pulled from your site:",
+        timestamp: new Date(),
+        widget: 'service_selector',
+      },
+    })
+  }, [])
 
   const handleUserInput = useCallback((value: string) => {
     dispatch({ type: 'ADD_MESSAGE', message: userMsg(value) })
@@ -309,7 +391,7 @@ export function useBasicsOnboarding(
       message: {
         id: makeId(),
         role: 'assistant',
-        content: "Great! The services are now added to your business. Next, let's set up your loyalty program.",
+        content: "Your services are set. Next, let's figure out what kind of loyalty program fits your business best.",
         timestamp: new Date(),
         widget: 'service_actions',
       },
@@ -323,6 +405,10 @@ export function useBasicsOnboarding(
       businessCategory: s.businessCategory ?? 'other',
       websiteUrl: s.websiteUrl,
       services: s.services.filter((sv) => s.selectedServiceIds.has(sv.id)),
+      offering_type: s.offering_type ?? 'service',
+      industry: s.industry ?? 'other',
+      brand_personality: s.brand_personality,
+      services_and_products: s.services_and_products ?? '',
     })
   }, [])
 
@@ -331,6 +417,7 @@ export function useBasicsOnboarding(
   return {
     state,
     start,
+    startDemo,
     handleUserInput,
     selectUrl,
     confirmServices,

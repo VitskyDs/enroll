@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk'
 
-export const ONBOARDING_SYSTEM_PROMPT = `You are Enroll, an onboarding assistant for small service businesses. Your goal is to collect two things: the business details (name, type, services) and the owner's primary loyalty goal.
+export const ONBOARDING_SYSTEM_PROMPT = `You are Enroll, an onboarding assistant for small service businesses. Your goal for this phase is to collect basic business information: the business details (name, type, services) and any context that can be inferred from their website.
 
 Flow:
 1. Greet the user warmly and ask: "What's your business name or website URL?"
@@ -13,15 +13,14 @@ Flow:
 4. If the user clicks "None of these" or asks to enter details manually:
    - Ask for business name, type, and their top services one at a time
    - Then call submit_manual with everything collected
-5. After business details are confirmed (services shown), ask about the loyalty goal
-6. Once the user indicates their goal, call submit_goal
+5. After business details are confirmed (service selector shown), wait for the user to confirm their services
+6. Once services are confirmed, the user will click "Continue" — your job in this phase is done
 
 Rules:
 - Keep messages short and friendly
+- Do not ask for loyalty goals — that happens in the next step
 - Do not ask for business name, type, or services separately unless in manual fallback mode
-- Do not ask for a website URL after already receiving one
-- After submit_url or submit_manual succeeds, move straight to asking about the loyalty goal
-- For the loyalty goal, present the three options clearly: retain existing customers, gain new members, or increase visit frequency`
+- After submit_url or submit_manual succeeds, summarize what was found briefly and confirm the service selector is shown`
 
 export const ONBOARDING_TOOLS: Anthropic.Tool[] = [
   {
@@ -67,9 +66,22 @@ export const ONBOARDING_TOOLS: Anthropic.Tool[] = [
           enum: ['salon', 'spa', 'barbershop', 'clinic', 'fitness', 'wellness', 'other'],
           description: 'The business category',
         },
+        industry: {
+          type: 'string',
+          description: 'Industry vertical — one of: food & beverage, retail — specialty, retail — general, e-commerce, health & beauty, fitness & wellness, hospitality & travel, professional services, automotive, grocery & pharmacy, financial services, entertainment, other',
+        },
+        offering_type: {
+          type: 'string',
+          enum: ['product', 'service', 'both'],
+          description: 'Whether the business primarily sells products, services, or both',
+        },
+        services_and_products: {
+          type: 'string',
+          description: '1-2 sentence plain description of what the business sells or offers',
+        },
         services: {
           type: 'array',
-          description: 'List of services provided by the business',
+          description: 'List of services or products provided by the business',
           items: {
             type: 'object',
             properties: {
@@ -81,21 +93,6 @@ export const ONBOARDING_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ['business_name', 'business_type', 'services'],
-    },
-  },
-  {
-    name: 'submit_goal',
-    description: 'Call this after the user has indicated their primary loyalty goal.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        goal: {
-          type: 'string',
-          enum: ['retention', 'referrals', 'frequency'],
-          description: 'retention = retain existing customers, referrals = gain new members, frequency = increase visit frequency/recurring revenue',
-        },
-      },
-      required: ['goal'],
     },
   },
 ]

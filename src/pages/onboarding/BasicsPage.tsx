@@ -11,15 +11,21 @@ const INPUT_STEPS: OnboardingStep[] = ['greeting', 'collect_url_or_name', 'manua
 export default function BasicsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const userName = (location.state as { userName?: string })?.userName
+  const locationState = location.state as { userName?: string; demo?: boolean } | null
+  const userName = locationState?.userName
+  const demoMode = locationState?.demo === true
 
-  const { state, start, handleUserInput, selectUrl, confirmServices, continueToProgram } =
+  const { state, start, startDemo, handleUserInput, selectUrl, confirmServices, continueToProgram } =
     useBasicsOnboarding(userName, (data) => {
-      navigate('/onboarding/program', { state: data })
+      navigate('/onboarding/preferences', { state: { ...data, demo: demoMode } })
     })
 
   useEffect(() => {
-    start()
+    if (demoMode) {
+      startDemo()
+    } else {
+      start()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -71,8 +77,8 @@ export default function BasicsPage() {
       onSend={handleUserInput}
       onBack={() => navigate('/')}
       renderWidget={renderWidget}
-      title="Hi there!"
-      subtitle="I'll help you set up your business and create a loyalty program in just a few steps."
+      title="Your business"
+      subtitle="Tell me about your business and I'll pull in your services automatically."
       inputEnabled={INPUT_STEPS.includes(state.step)}
     />
   )

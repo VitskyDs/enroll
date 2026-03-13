@@ -1,79 +1,79 @@
 import { anthropic } from '@/lib/anthropic'
-import { supabase } from '@/lib/supabase'
 import { buildGenerateProgramPrompt } from '@/prompts/generateProgram'
-import { validateOutput, moderateContent } from '@/lib/validateProgram'
-import type { BusinessCategory, LoyaltyGoal, LoyaltyProgram, Service } from '@/types'
+import { getArchetype } from '@/data/loyaltyProgramArchetypes'
+import type { BusinessOnboardingData, LoyaltyProgram, ProgramRecommendation } from '@/types'
 
-async function runGeneration(
-  prompt: string,
-  onChunk?: (delta: string) => void,
-): Promise<LoyaltyProgram> {
+function moderateText(text: string): boolean {
+  const blocklist = ['kill', 'murder', 'suicide', 'rape', 'cocaine', 'heroin', 'methamphetamine', 'fuck', 'shit', 'porn', 'nude', 'naked']
+  const lower = text.toLowerCase()
+  return !blocklist.some((term) => lower.includes(term))
+}
+
+async function runGeneration(prompt: string): Promise<LoyaltyProgram> {
   const stream = anthropic.messages.stream({
     model: 'claude-opus-4-6',
-    max_tokens: 2048,
+    max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
-  })
-
-  stream.on('text', (delta) => {
-    onChunk?.(delta)
   })
 
   const finalMessage = await stream.finalMessage()
   const text = finalMessage.content[0].type === 'text' ? finalMessage.content[0].text.trim() : ''
 
+  // Strip markdown code fences if present
+  const jsonText = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
+
   let parsed: unknown
   try {
-    parsed = JSON.parse(text)
+    parsed = JSON.parse(jsonText)
   } catch {
     throw new Error('Generated output is not valid JSON. Please try again.')
   }
 
-  const outputCheck = validateOutput(parsed)
-  if (!outputCheck.valid) {
-    throw new Error(outputCheck.error)
+  const p = parsed as Record<string, unknown>
+
+  // Basic required field check
+  const required = ['program_type', 'program_name', 'currency_name', 'earn_rules', 'redemption_rules', 'bonus_rules', 'referral_description', 'brand_voice_summary', 'terms_and_conditions']
+  for (const field of required) {
+    if (p[field] === undefined) {
+      throw new Error(`Missing required field: ${field}`)
+    }
   }
 
-  // validateOutput confirmed shape is correct; cast to merge with metadata fields
-  const program = {
+  if (typeof p.program_name !== 'string' || p.program_name.trim().length === 0) {
+    throw new Error('program_name must be a non-empty string')
+  }
+
+  // Content moderation on key text fields
+  const textToCheck = [p.program_name, p.currency_name, p.brand_voice_summary, p.referral_description].join(' ')
+  if (typeof textToCheck === 'string' && !moderateText(textToCheck)) {
+    throw new Error('Generated content contains inappropriate language')
+  }
+
+  return {
     id: '',
     business_id: '',
     created_at: new Date().toISOString(),
-    ...(parsed as Record<string, unknown>),
+    ...(p as object),
   } as LoyaltyProgram
-
-  const modCheck = moderateContent(program)
-  if (!modCheck.safe) {
-    throw new Error(modCheck.reason)
-  }
-
-  return program
 }
 
 /**
- * Generates a loyalty program using Claude with streaming.
- * Validates and moderates the output; retries once automatically on failure.
+ * Generates a loyalty program using the archetype + customization instructions.
+ * Retries once on failure.
  */
 export async function generateProgram(
-  businessName: string,
-  businessCategory: BusinessCategory,
-  goal: LoyaltyGoal,
-  services: Service[],
-  onChunk?: (delta: string) => void,
+  onboardingData: BusinessOnboardingData,
+  recommendation: ProgramRecommendation,
 ): Promise<LoyaltyProgram> {
-  const { data: examples } = await supabase.from('loyalty_program_examples').select('*').limit(3)
+  const archetype = getArchetype(recommendation.program_type)
+  if (!archetype) throw new Error(`No archetype found for program type: ${recommendation.program_type}`)
 
-  const prompt = buildGenerateProgramPrompt(
-    businessName,
-    businessCategory,
-    goal,
-    services,
-    examples ?? [],
-  )
+  const prompt = buildGenerateProgramPrompt(onboardingData, recommendation, archetype)
 
   try {
-    return await runGeneration(prompt, onChunk)
+    return await runGeneration(prompt)
   } catch {
-    // Retry once without streaming to avoid duplicate chunks
+    // Retry once
     return await runGeneration(prompt)
   }
 }

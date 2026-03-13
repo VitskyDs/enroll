@@ -1,0 +1,72 @@
+{
+  "title": "loyalty program reference guide",
+  "purpose": "LLM decision guide — match an onboarding business profile to the right loyalty program type",
+  "schema": {
+    "program_type": "name and identifier of the program",
+    "how_it_works": "mechanics of the program",
+    "best_suited_for": "business profile this program fits best",
+    "top_industries": "industry verticals where this program performs best",
+    "business_size": "typical business size this suits",
+    "setup_complexity": "relative difficulty to implement",
+    "customer_engagement": "typical engagement level and primary driver",
+    "key_smb_factors": "practical SMB-specific implementation notes",
+    "example_brands": "real-world brands using this program type"
+  },
+  "programs": [
+    {
+      "program_type": "points-based",
+      "how_it_works": "customers earn points per purchase (e.g. 1 pt per $1 spent) and redeem for discounts, free products, or perks",
+      "best_suited_for": "businesses wanting to reward repeat purchases and track customer behavior over time",
+      "top_industries": "retail, restaurants, e-commerce, grocery, pharmacies, airlines",
+      "business_size": "small → enterprise",
+      "setup_complexity": "low–medium",
+      "customer_engagement": "moderate (delayed gratification)",
+      "key_smb_factors": "low cost to launch; scalable; works well with POS systems; points expiry drives urgency",
+      "example_brands": "Starbucks, Chipotle, Petco, Delta SkyMiles"
+    },
+    {
+      "program_type": "tiered",
+      "how_it_works": "members are grouped into levels (e.g. silver / gold / platinum) with better perks at higher tiers based on spend or activity",
+      "best_suited_for": "businesses with a range of customer spending levels who want to reward top customers and motivate mid-tier customers to spend more",
+      "top_industries": "airlines, hotels, beauty, fashion, credit cards, luxury goods",
+      "business_size": "medium → enterprise",
+      "setup_complexity": "medium–high",
+      "customer_engagement": "high (aspirational motivation)",
+      "key_smb_factors": "requires clear tier logic; best when top customers are significantly more valuable; can feel out of reach for casual buyers",
+      "example_brands": "Marriott Bonvoy, Sephora Beauty Insider, American Airlines AAdvantage"
+    },
+    {
+      "program_type": "cash back",
+      "how_it_works": "customers earn a % of each purchase back as store credit or cash (e.g. 2% back on every $1 spent)",
+      "best_suited_for": "businesses where customers are price-sensitive and prefer immediate, tangible value over complex reward systems",
+      "top_industries": "credit cards, grocery, fuel, e-commerce, general retail, financial services",
+      "business_size": "small → enterprise",
+      "setup_complexity": "low",
+      "customer_engagement": "moderate (straightforward appeal)",
+      "key_smb_factors": "very easy to explain; high opt-in rate; margin impact needs careful planning; best when average order value is high",
+      "example_brands": "Rakuten, Chase Freedom, Costco, Target Circle"
+    },
+    {
+      "program_type": "punch card",
+      "how_it_works": "customers collect a stamp or punch per visit/purchase; after a set number they earn a free item or discount (e.g. buy 9 coffees, get 1 free)",
+      "best_suited_for": "local, high-frequency businesses with a simple, single-product or limited-menu offering",
+      "top_industries": "cafés, bakeries, hair salons, car washes, dry cleaners, food trucks",
+      "business_size": "micro → small",
+      "setup_complexity": "very low",
+      "customer_engagement": "low–moderate (simple & tactile)",
+      "key_smb_factors": "near-zero cost to implement; no software needed; easy for staff; limited data capture; digital versions (apps) extend the model",
+      "example_brands": "local coffee shops, Subway (legacy), nail salons"
+    },
+    {
+      "program_type": "points + tiers",
+      "how_it_works": "all members earn Stars per dollar spent. tier determines earn rate: Green = 1 Star/$1 · Gold (500 Stars/yr) = 1.2 Stars/$1 · Reserve (2,500 Stars/yr) = 1.7 Stars/$1. higher tiers unlock Stars that never expire, more Double Star Days, extended birthday reward windows, and exclusive menu access.",
+      "best_suited_for": "high-frequency brands with a wide customer spectrum — from casual occasional buyers to daily loyalists; especially effective when top customers visit 5–10x more than the average customer",
+      "top_industries": "coffee, fast casual restaurants, retail, beauty, fitness, any brand with daily or weekly visit cadence",
+      "business_size": "small → enterprise (most powerful at scale)",
+      "setup_complexity": "medium–high (requires spend tracking + tier logic)",
+      "customer_engagement": "very high (aspirational + habitual)",
+      "key_smb_factors": "run flat points first. once data shows a top-spending cohort (~15–20% of customers driving 60%+ of revenue), add a 2nd tier with faster earn rate and one exclusive perk. Starbucks' original Green/Gold two-tier model is a practical SMB template.",
+      "example_brands": "Starbucks Rewards (34.6M US members, Q1 FY25) — applicable as a template for any high-frequency SMB with a loyalty app or POS integration"
+    }
+  ]
+}

@@ -1,0 +1,451 @@
+{
+  "title": "business onboarding schema",
+  "purpose": "structured input form for LLM to collect and infer business profile, then match to the correct loyalty program type",
+  "instructions": "fields marked 'collected' are provided directly by the user. fields marked 'inferred' are derived by the LLM from other inputs — do not ask the user for these. fields marked 'derived' are computed by the LLM after all inputs are collected — never ask the user for these.",
+  "sections": [
+    {
+      "section": "1. basic information",
+      "description": "identifies who the business is and what they sell",
+      "fields": [
+        {
+          "id": "business_name",
+          "label": "business name",
+          "source": "collected",
+          "input_type": "text",
+          "required": true,
+          "prompt": "what is your business name?",
+          "example": "Blue Bottle Coffee"
+        },
+        {
+          "id": "website",
+          "label": "website url",
+          "source": "collected",
+          "input_type": "url",
+          "required": false,
+          "prompt": "do you have a website? if so, paste the url here.",
+          "example": "https://bluebottlecoffee.com",
+          "note": "if provided, scrape the website to auto-fill services_and_products and industry before asking the user anything"
+        },
+        {
+          "id": "services_and_products",
+          "label": "services & products",
+          "source": "inferred",
+          "inferred_from": ["website"],
+          "fallback": "collected — ask: 'briefly describe what you sell or offer'",
+          "required": true,
+          "example": "specialty coffee drinks, beans, brewing equipment",
+          "note": "extract from homepage, about page, or product/menu pages. summarize into 1-2 sentences. flag whether the core offering is a product, a service, or both — this affects punch card viability."
+        },
+        {
+          "id": "offering_type",
+          "label": "product vs. service",
+          "source": "inferred",
+          "inferred_from": ["services_and_products"],
+          "required": true,
+          "output_type": "enum",
+          "options": ["product", "service", "both"],
+          "note": "infer from services_and_products. used in decision rules: punch card is only viable for single-product or single-service businesses. multi-service businesses cannot cleanly implement punch card logic."
+        },
+        {
+          "id": "industry",
+          "label": "industry",
+          "source": "inferred",
+          "inferred_from": ["services_and_products", "website"],
+          "fallback": "collected — ask: 'what industry are you in?'",
+          "input_type": "enum",
+          "required": true,
+          "options": [
+            "food & beverage",
+            "retail — specialty",
+            "retail — general",
+            "e-commerce",
+            "health & beauty",
+            "fitness & wellness",
+            "hospitality & travel",
+            "professional services",
+            "automotive",
+            "grocery & pharmacy",
+            "financial services",
+            "entertainment",
+            "other"
+          ],
+          "note": "infer from website or product description. if ambiguous, pick the closest match. used in decision rules as a confirming signal and coalition disqualifier."
+        },
+        {
+          "id": "brand_personality",
+          "label": "brand personality",
+          "source": "inferred",
+          "inferred_from": ["website", "services_and_products"],
+          "required": false,
+          "output_type": "object",
+          "note": "inferred from website copy, visual tone, product/service descriptions, and any 'about' or brand language. used downstream by the LLM when customizing program_name, currency_name, brand_voice_summary, and referral_description. do not ask the user for this — if the website is unavailable and services_and_products is sparse, leave as null and fall back to industry-level defaults in the archetype.",
+          "fields": {
+            "tone": {
+              "description": "the dominant emotional register of the brand's communication style",
+              "output_type": "enum",
+              "options": [
+                "playful",
+                "warm",
+                "premium",
+                "clinical",
+                "irreverent",
+                "minimalist",
+                "bold",
+                "community-driven"
+              ],
+              "note": "pick the single closest match. signals drawn from: headline language, color palette descriptions, product naming style, copy formality. a brand using lowercase everywhere with short punchy copy → irreverent or minimalist. a brand with serif fonts, 'crafted' and 'curated' language → premium. a brand leading with 'our community' or 'our family' → community-driven."
+            },
+            "identity_keywords": {
+              "description": "2–4 short nouns or adjectives that capture what the brand stands for — extracted or closely paraphrased from site copy, not invented",
+              "output_type": "array of strings",
+              "example": ["handcrafted", "neighborhood", "sustainable"],
+              "note": "pull from mission statements, taglines, about pages, or product descriptions. if none are available, derive from industry + offering type (e.g. a high-end florist → ['artisan', 'seasonal', 'considered']). keep to 2–4 terms — more than that dilutes signal."
+            },
+            "price_positioning": {
+              "description": "where the brand sits on the value spectrum",
+              "output_type": "enum",
+              "options": ["budget", "mid-market", "premium", "luxury"],
+              "note": "infer from price points if visible on site, or from brand signals: photography quality, language formality, product descriptions. relevant because price positioning affects which rewards feel meaningful — a luxury brand offering '$5 off' feels incongruent; a budget brand offering 'exclusive access' may feel hollow."
+            },
+            "customer_relationship_model": {
+              "description": "how the brand frames its relationship with customers",
+              "output_type": "enum",
+              "options": [
+                "transactional",
+                "community",
+                "membership",
+                "expert-to-customer"
+              ],
+              "note": "transactional = efficient, low-friction, value-focused (think grocery or fuel). community = belonging, shared identity (think local coffee shop or fitness studio). membership = access and exclusivity (think specialty retail or travel). expert-to-customer = trust and guidance (think skincare, financial services, professional services). this maps directly to the tone of brand_voice_summary and the framing of tier names and referral copy."
+            }
+          },
+          "downstream_usage": {
+            "program_name": "use tone + identity_keywords to generate a name that sounds native to the brand — a brand with tone=irreverent and keywords=['bold','local'] might yield 'The Regulars'; a brand with tone=premium and keywords=['artisan','seasonal'] might yield 'The Reserve'",
+            "currency_name": "draw from identity_keywords — the currency name should feel like something this brand would actually say",
+            "brand_voice_summary": "use tone + customer_relationship_model as the primary inputs — these two fields together define how the program should 'speak'",
+            "referral_description": "use tone to calibrate formality and warmth; use customer_relationship_model to frame the ask (community brands: 'bring a friend into the fold'; transactional brands: 'share your code, both of you save')",
+            "reward_tiers": "use price_positioning to calibrate what perks feel right — premium/luxury brands should avoid cash discounts as a primary perk; budget brands should lead with savings"
+          }
+        }
+      ]
+    },
+    {
+      "section": "2. loyalty program inputs",
+      "description": "the three diagnostic questions that drive program type selection",
+      "fields": [
+        {
+          "id": "primary_goal",
+          "label": "primary loyalty goal",
+          "source": "collected",
+          "input_type": "single_select",
+          "required": true,
+          "prompt": "what is your main goal with a loyalty program?",
+          "options": [
+            {
+              "value": "acquire",
+              "label": "gain new members",
+              "signals": ["cash back", "punch card", "coalition"]
+            },
+            {
+              "value": "retain",
+              "label": "retain existing customers",
+              "signals": ["points-based", "points + tiers", "tiered"]
+            },
+            {
+              "value": "revenue",
+              "label": "increase recurring revenue",
+              "signals": ["points + tiers", "tiered", "points-based"]
+            }
+          ]
+        },
+        {
+          "id": "visit_frequency",
+          "label": "typical customer visit frequency",
+          "source": "collected",
+          "input_type": "single_select",
+          "required": true,
+          "prompt": "how often does a typical customer visit or buy from you?",
+          "options": [
+            {
+              "value": "high",
+              "label": "weekly or more",
+              "signals": ["punch card", "points-based", "points + tiers"]
+            },
+            {
+              "value": "medium",
+              "label": "2-3 times a month",
+              "signals": ["points-based", "points + tiers", "cash back"]
+            },
+            {
+              "value": "low",
+              "label": "once a month or less",
+              "signals": ["tiered", "cash back", "coalition"]
+            }
+          ]
+        },
+        {
+          "id": "spend_variance",
+          "label": "customer spend consistency",
+          "source": "collected",
+          "input_type": "single_select",
+          "required": true,
+          "prompt": "do your customers vary a lot in how much they spend, or is it pretty consistent?",
+          "options": [
+            {
+              "value": "consistent",
+              "label": "pretty consistent — most customers spend about the same",
+              "signals": ["punch card", "points-based", "cash back"]
+            },
+            {
+              "value": "varied",
+              "label": "varies a lot — some customers spend significantly more than others",
+              "signals": ["points + tiers", "tiered"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "3. derived fields",
+      "description": "fields the LLM computes after all inputs are collected. never ask the user for these.",
+      "fields": [
+        {
+          "id": "recommendation",
+          "label": "recommended loyalty program",
+          "source": "derived",
+          "derived_from": [
+            "primary_goal",
+            "visit_frequency",
+            "spend_variance",
+            "industry",
+            "offering_type"
+          ],
+          "output_type": "enum",
+          "options": [
+            "points-based",
+            "tiered",
+            "cash back",
+            "punch card",
+            "coalition",
+            "points + tiers"
+          ],
+          "logic": "see decision_rules below"
+        },
+        {
+          "id": "confidence",
+          "label": "recommendation confidence",
+          "source": "derived",
+          "derived_from": [
+            "primary_goal",
+            "visit_frequency",
+            "spend_variance",
+            "industry"
+          ],
+          "output_type": "enum",
+          "options": ["high", "medium", "low"],
+          "note": "high = base rule fires AND industry confirms. medium = base rule fires but industry is neutral. low = conflicting signals or industry overrides — present top 2 options with explanation."
+        },
+        {
+          "id": "rationale",
+          "label": "recommendation rationale",
+          "source": "derived",
+          "output_type": "text",
+          "note": "1-2 sentence plain-language explanation referencing the business's specific industry, offering type, and stated goal."
+        }
+      ]
+    }
+  ],
+  "decision_rules": {
+    "description": "apply rules in order — first match wins. each rule has a base condition set plus an optional industry_confirms list (raises confidence to high) and an industry_override block (changes the recommendation entirely when industry is a strong enough signal to override the base logic).",
+    "industry_groups": {
+      "note": "shorthand group labels used in rule conditions below",
+      "high_frequency_product": [
+        "food & beverage",
+        "grocery & pharmacy",
+        "automotive"
+      ],
+      "experience_and_status": [
+        "hospitality & travel",
+        "health & beauty",
+        "fitness & wellness",
+        "entertainment"
+      ],
+      "price_sensitive": [
+        "grocery & pharmacy",
+        "financial services",
+        "e-commerce",
+        "retail — general"
+      ],
+      "multi_brand_ecosystem": [
+        "hospitality & travel",
+        "financial services",
+        "retail — general",
+        "entertainment"
+      ],
+      "single_sku_service": [
+        "food & beverage",
+        "health & beauty",
+        "fitness & wellness",
+        "automotive"
+      ]
+    },
+    "punch_card_eligibility": {
+      "note": "punch card is only viable when BOTH conditions are true. if either fails, remove punch card from consideration entirely.",
+      "conditions": [
+        "offering_type is 'product' or 'service' (not 'both') — single core offering only",
+        "industry is in high_frequency_product or single_sku_service"
+      ]
+    },
+    "coalition_eligibility": {
+      "note": "coalition should only be recommended when industry explicitly supports a shared ecosystem. never recommend coalition outside these industries.",
+      "eligible_industries": [
+        "hospitality & travel",
+        "financial services",
+        "retail — general",
+        "entertainment"
+      ]
+    },
+    "rules": [
+      {
+        "rule_id": "R1",
+        "label": "high frequency + varied spend",
+        "conditions": {
+          "visit_frequency": "high",
+          "spend_variance": "varied"
+        },
+        "recommendation": "points + tiers",
+        "industry_confirms": [
+          "food & beverage",
+          "health & beauty",
+          "fitness & wellness",
+          "retail — specialty"
+        ],
+        "rationale": "high frequency creates habit; spend variance justifies tier differentiation to reward and retain top customers"
+      },
+      {
+        "rule_id": "R2",
+        "label": "high frequency + consistent spend + acquire goal",
+        "conditions": {
+          "visit_frequency": "high",
+          "spend_variance": "consistent",
+          "primary_goal": "acquire"
+        },
+        "recommendation": "punch card",
+        "punch_card_gate": true,
+        "fallback_if_ineligible": "points-based",
+        "industry_confirms": ["food & beverage", "automotive"],
+        "rationale": "punch card is the simplest acquisition tool for high-frequency single-product businesses; if punch card is ineligible, flat points achieve the same habit loop with more flexibility"
+      },
+      {
+        "rule_id": "R3",
+        "label": "high frequency + consistent spend + retain or revenue goal",
+        "conditions": {
+          "visit_frequency": "high",
+          "spend_variance": "consistent",
+          "primary_goal": ["retain", "revenue"]
+        },
+        "recommendation": "points-based",
+        "industry_confirms": [
+          "food & beverage",
+          "grocery & pharmacy",
+          "retail — specialty"
+        ],
+        "rationale": "high frequency suits points accumulation; consistent spend means tiers add little value over a well-structured flat points program"
+      },
+      {
+        "rule_id": "R4",
+        "label": "medium frequency + varied spend + revenue goal",
+        "conditions": {
+          "visit_frequency": "medium",
+          "spend_variance": "varied",
+          "primary_goal": "revenue"
+        },
+        "recommendation": "points + tiers",
+        "industry_confirms": [
+          "retail — specialty",
+          "health & beauty",
+          "fitness & wellness",
+          "hospitality & travel"
+        ],
+        "rationale": "tiers motivate mid-frequency customers to increase spend to reach the next level, directly driving revenue"
+      },
+      {
+        "rule_id": "R5",
+        "label": "medium frequency + consistent spend",
+        "conditions": {
+          "visit_frequency": "medium",
+          "spend_variance": "consistent"
+        },
+        "recommendation": "points-based",
+        "industry_override": {
+          "industries": [
+            "grocery & pharmacy",
+            "e-commerce",
+            "retail — general"
+          ],
+          "then": "cash back",
+          "reason": "price-sensitive industries see higher opt-in and engagement with immediate cash back than delayed points"
+        },
+        "industry_confirms": ["retail — specialty", "food & beverage"],
+        "rationale": "moderate frequency with uniform spend is the classic points program use case; cash back is preferred in price-sensitive verticals"
+      },
+      {
+        "rule_id": "R6",
+        "label": "low frequency + varied spend + retain goal",
+        "conditions": {
+          "visit_frequency": "low",
+          "spend_variance": "varied",
+          "primary_goal": "retain"
+        },
+        "recommendation": "tiered",
+        "industry_confirms": [
+          "hospitality & travel",
+          "health & beauty",
+          "retail — specialty",
+          "professional services"
+        ],
+        "rationale": "low frequency + high spend variance signals a small VIP cohort driving most revenue — tiers reward and retain them without wasting budget on occasional buyers"
+      },
+      {
+        "rule_id": "R7",
+        "label": "low frequency + acquire goal",
+        "conditions": {
+          "visit_frequency": "low",
+          "primary_goal": "acquire"
+        },
+        "recommendation": "cash back",
+        "industry_override": {
+          "industries": [
+            "hospitality & travel",
+            "health & beauty",
+            "entertainment"
+          ],
+          "then": "tiered",
+          "reason": "in experience and status-driven industries, aspirational tiers are a stronger acquisition hook than cash back — customers join to access the tier benefits, not a discount"
+        },
+        "industry_confirms": [
+          "grocery & pharmacy",
+          "financial services",
+          "e-commerce"
+        ],
+        "rationale": "immediate tangible value is most effective at attracting new customers when visit frequency is low; in status-driven industries, tier access is the acquisition hook"
+      },
+      {
+        "rule_id": "R8",
+        "label": "coalition — multi-brand context",
+        "conditions": {
+          "industry": [
+            "hospitality & travel",
+            "financial services",
+            "retail — general",
+            "entertainment"
+          ]
+        },
+        "additional_signal": "business explicitly shares a customer base with other brands (e.g. mall, airport, resort, financial product suite)",
+        "recommendation": "coalition",
+        "note": "only surface this rule if the industry is eligible AND the business context suggests a shared ecosystem. coalition should never be the first recommendation — treat it as an alternative to present alongside the base recommendation when eligible.",
+        "rationale": "coalition programs extend reach beyond the business's own customer base by tapping into a shared rewards network — most valuable when the customer naturally interacts with multiple brands in the same context"
+      }
+    ]
+  }
+}

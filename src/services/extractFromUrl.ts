@@ -1,26 +1,38 @@
 import { anthropic } from '@/lib/anthropic'
 import type Anthropic from '@anthropic-ai/sdk'
-import type { BusinessCategory, Service } from '@/types'
+import type { BrandPersonality, BusinessCategory, OfferingType, Service } from '@/types'
 
 export interface ExtractedBusiness {
   name: string
   type: BusinessCategory
   services: Service[]
+  services_and_products: string
+  offering_type: OfferingType
+  industry: string
+  brand_personality: BrandPersonality | null
 }
 
 /**
- * Visits a URL using Claude's web_search tool and extracts structured business info:
- * business name, category, and up to 8 services with names/prices.
+ * Visits a URL using Claude's web_search tool and extracts structured business info.
  */
 export async function extractFromUrl(url: string): Promise<ExtractedBusiness> {
   const messages: Anthropic.MessageParam[] = [
     {
       role: 'user',
-      content: `Visit ${url} and extract the following information about the business. Return ONLY a JSON object — no markdown, no code fences, no explanation:
+      content: `Visit ${url} and extract the following information. Return ONLY a JSON object — no markdown, no code fences, no explanation:
 
 {
   "name": "Business Name",
   "type": "salon",
+  "services_and_products": "1-2 sentence summary of the core offering",
+  "offering_type": "service",
+  "industry": "health & beauty",
+  "brand_personality": {
+    "tone": "warm",
+    "identity_keywords": ["handcrafted", "neighborhood"],
+    "price_positioning": "mid-market",
+    "customer_relationship_model": "community"
+  },
   "services": [
     {
       "name": "Service Name",
@@ -34,11 +46,18 @@ export async function extractFromUrl(url: string): Promise<ExtractedBusiness> {
 
 Rules:
 - "type" must be one of: salon, spa, barbershop, clinic, fitness, wellness, other
+- "offering_type" must be one of: product, service, both
+- "industry" must be one of: food & beverage, retail — specialty, retail — general, e-commerce, health & beauty, fitness & wellness, hospitality & travel, professional services, automotive, grocery & pharmacy, financial services, entertainment, other
+- "brand_personality.tone" must be one of: playful, warm, premium, clinical, irreverent, minimalist, bold, community-driven
+- "brand_personality.price_positioning" must be one of: budget, mid-market, premium, luxury
+- "brand_personality.customer_relationship_model" must be one of: transactional, community, membership, expert-to-customer
+- "brand_personality.identity_keywords" is 2-4 short words from site copy; derive from industry if unavailable
+- "services_and_products" is a 1-2 sentence plain description of the core offering
 - Include up to 8 representative services
-- "price_cents" is the price in cents (e.g. 5000 = $50), null if not listed
-- "duration_minutes" is null if not mentioned
-- "description" is null if not available
-- "category" is a short label like "hair", "nails", "massage", "skin", etc.`,
+- "price_cents" in cents (5000 = $50), null if not listed
+- "duration_minutes" null if not mentioned
+- "description" null if not available
+- "category" short label: "hair", "nails", "massage", "skin", etc.`,
     },
   ]
 
@@ -48,7 +67,7 @@ Rules:
       max_tokens: 2048,
       tools: [{ type: 'web_search_20250305', name: 'web_search' } as unknown as Anthropic.Tool],
       messages,
-    })
+    }, { headers: { 'anthropic-beta': 'web-search-2025-03-05' } })
 
     messages.push({ role: 'assistant', content: response.content })
 
@@ -60,6 +79,15 @@ Rules:
       const raw = JSON.parse(match[0]) as {
         name: string
         type: string
+        services_and_products?: string
+        offering_type?: string
+        industry?: string
+        brand_personality?: {
+          tone?: string
+          identity_keywords?: string[]
+          price_positioning?: string
+          customer_relationship_model?: string
+        } | null
         services: Array<{
           name: string
           description?: string | null
@@ -74,6 +102,11 @@ Rules:
         ? (raw.type as BusinessCategory)
         : 'other'
 
+      const validOfferingTypes: OfferingType[] = ['product', 'service', 'both']
+      const offering_type: OfferingType = validOfferingTypes.includes(raw.offering_type as OfferingType)
+        ? (raw.offering_type as OfferingType)
+        : 'service'
+
       const services: Service[] = (raw.services ?? []).map((s, i) => ({
         id: String(i + 1),
         name: s.name,
@@ -84,7 +117,30 @@ Rules:
         category: s.category,
       }))
 
-      return { name: raw.name, type, services }
+      const validTones = ['playful', 'warm', 'premium', 'clinical', 'irreverent', 'minimalist', 'bold', 'community-driven']
+      const validPositioning = ['budget', 'mid-market', 'premium', 'luxury']
+      const validModels = ['transactional', 'community', 'membership', 'expert-to-customer']
+
+      let brand_personality: BrandPersonality | null = null
+      if (raw.brand_personality) {
+        const bp = raw.brand_personality
+        brand_personality = {
+          tone: (validTones.includes(bp.tone ?? '') ? bp.tone : 'warm') as BrandPersonality['tone'],
+          identity_keywords: Array.isArray(bp.identity_keywords) ? bp.identity_keywords.slice(0, 4) : [],
+          price_positioning: (validPositioning.includes(bp.price_positioning ?? '') ? bp.price_positioning : 'mid-market') as BrandPersonality['price_positioning'],
+          customer_relationship_model: (validModels.includes(bp.customer_relationship_model ?? '') ? bp.customer_relationship_model : 'community') as BrandPersonality['customer_relationship_model'],
+        }
+      }
+
+      return {
+        name: raw.name,
+        type,
+        services,
+        services_and_products: raw.services_and_products ?? services.map((s) => s.name).join(', '),
+        offering_type,
+        industry: raw.industry ?? 'other',
+        brand_personality,
+      }
     }
 
     const toolResults: Anthropic.ToolResultBlockParam[] = response.content

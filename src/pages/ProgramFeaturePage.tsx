@@ -1,9 +1,9 @@
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import type { LoyaltyProgram, EarnRule, RewardTier, BonusRule } from '@/types'
+import type { LoyaltyProgram } from '@/types'
 import { BottomNav } from '@/components/BottomNav'
 
-type FeatureKey = 'currency' | 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'brand-voice'
+type FeatureKey = 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'referral' | 'brand-voice'
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
@@ -15,75 +15,69 @@ function Card({ children }: { children: React.ReactNode }) {
 
 function featureTitle(key: FeatureKey): string {
   switch (key) {
-    case 'currency': return 'Program currency'
     case 'earn-rules': return 'Earn rules'
     case 'reward-tiers': return 'Reward tiers'
     case 'bonus-rules': return 'Bonus rules'
+    case 'referral': return 'Referral program'
     case 'brand-voice': return 'Brand voice'
   }
 }
 
 function FeatureCards({ featureKey, program }: { featureKey: FeatureKey; program: LoyaltyProgram }) {
   switch (featureKey) {
-    case 'currency':
+    case 'earn-rules': {
+      const rules = program.earn_rules
       return (
         <>
-          <Card>{program.currency_name}</Card>
-          <Card>{`Customers earn ${program.currency_name} for every qualifying visit or purchase.`}</Card>
-        </>
-      )
-    case 'earn-rules':
-      return (
-        <>
-          {program.earn_rules.map((rule: EarnRule) => (
-            <Card key={rule.label}>
+          {rules.base_rate && <Card>{String(rules.base_rate)}</Card>}
+          {Array.isArray(rules.qualifying_actions) && rules.qualifying_actions.map((action: Record<string, unknown>, i: number) => (
+            <Card key={i}>
               {[
-                rule.label,
-                rule.description,
-                rule.points_per_dollar != null
-                  ? `${rule.points_per_dollar} point${rule.points_per_dollar !== 1 ? 's' : ''} per $1 spent`
-                  : null,
-                rule.points_per_visit != null
-                  ? `${rule.points_per_visit} point${rule.points_per_visit !== 1 ? 's' : ''} per visit`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join('\n')}
+                String(action.action ?? '').replace(/_/g, ' '),
+                action.rate ? `Rate: ${action.rate}` : null,
+                action.notes ? `Note: ${action.notes}` : null,
+              ].filter(Boolean).join('\n')}
             </Card>
           ))}
         </>
       )
+    }
     case 'reward-tiers':
-      return (
+      return Array.isArray(program.reward_tiers) && program.reward_tiers.length > 0 ? (
         <>
-          {program.reward_tiers.map((tier: RewardTier) => (
-            <Card key={tier.name}>
-              {`${tier.name}\n${tier.points_required} points required\n${tier.reward_description}`}
-            </Card>
-          ))}
-        </>
-      )
-    case 'bonus-rules':
-      return (
-        <>
-          {program.bonus_rules.map((rule: BonusRule) => (
-            <Card key={rule.label}>
+          {program.reward_tiers.map((tier: Record<string, unknown>, i: number) => (
+            <Card key={i}>
               {[
-                rule.label,
-                rule.description,
-                rule.multiplier != null ? `${rule.multiplier}× multiplier` : null,
-              ]
-                .filter(Boolean)
-                .join('\n')}
+                String(tier.tier_name ?? `Tier ${i + 1}`),
+                tier.qualification_threshold ? `Threshold: ${tier.qualification_threshold}` : null,
+                Array.isArray(tier.perks) ? (tier.perks as string[]).join('\n') : null,
+              ].filter(Boolean).join('\n')}
             </Card>
           ))}
         </>
-      )
+      ) : <Card>No reward tiers configured</Card>
+    case 'bonus-rules':
+      return Array.isArray(program.bonus_rules) ? (
+        <>
+          {program.bonus_rules.map((rule: Record<string, unknown>, i: number) => (
+            <Card key={i}>
+              {[
+                String(rule.trigger ?? '').replace(/_/g, ' '),
+                rule.multiplier ? `${rule.multiplier}× multiplier` : null,
+                rule.bonus_sips != null ? `+${rule.bonus_sips} ${program.currency_name}` : null,
+                rule.bonus_credit != null ? `+$${rule.bonus_credit}` : null,
+                rule.notes ? String(rule.notes) : null,
+              ].filter(Boolean).join('\n')}
+            </Card>
+          ))}
+        </>
+      ) : <Card>No bonus rules configured</Card>
+    case 'referral':
+      return <Card>{program.referral_description || 'No referral program configured'}</Card>
     case 'brand-voice':
       return (
         <>
           <Card>{program.brand_voice_summary}</Card>
-          {program.referral_description ? <Card>{program.referral_description}</Card> : null}
         </>
       )
   }
