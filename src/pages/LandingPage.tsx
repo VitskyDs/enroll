@@ -16,7 +16,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="relative flex flex-col h-screen bg-white">
+    <div className="relative flex flex-col h-screen bg-white pb-5">
       {/* Logo — vertically centered */}
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center gap-3">

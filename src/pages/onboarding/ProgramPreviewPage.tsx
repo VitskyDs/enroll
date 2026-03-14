@@ -178,13 +178,18 @@ export default function ProgramPreviewPage() {
       </div>
 
       {/* CTA — pinned to bottom */}
-      <div className="px-4 pb-safe pb-6 pt-4 border-t border-zinc-100 shrink-0">
-
+      <div className="px-4 pb-safe pb-6 pt-4 border-t border-zinc-100 shrink-0 flex flex-col gap-3">
         <button
           onClick={() => navigate('/dashboard')}
           className="w-full py-4 bg-zinc-900 text-white rounded-xl text-base font-semibold"
         >
           Go to dashboard
+        </button>
+        <button
+          onClick={() => navigate('/onboarding')}
+          className="w-full py-2 text-sm text-zinc-400"
+        >
+          Start over
         </button>
       </div>
     </div>

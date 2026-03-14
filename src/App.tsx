@@ -17,11 +17,13 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      {/* Onboarding */}
       <Route path="/onboarding" element={<BasicsPage />} />
       <Route path="/onboarding/preferences" element={<PreferencesPage />} />
       <Route path="/onboarding/recommendation" element={<RecommendationPage />} />
       <Route path="/onboarding/generating" element={<GeneratingPage />} />
       <Route path="/onboarding/preview" element={<ProgramPreviewPage />} />
+      {/* Dashboard */}
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/program" element={<ProgramPage />} />
       <Route path="/program/:feature" element={<ProgramFeaturePage />} />

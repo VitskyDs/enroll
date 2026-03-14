@@ -20,7 +20,10 @@ Rules:
 - Keep messages short and friendly
 - Do not ask for loyalty goals — that happens in the next step
 - Do not ask for business name, type, or services separately unless in manual fallback mode
-- After submit_url or submit_manual succeeds, summarize what was found briefly and confirm the service selector is shown`
+- After submit_url or submit_manual succeeds, send exactly two short messages:
+  1. Identify the business in one sentence: "Looks like [name] is a [type], with [service 1], [service 2], and more." — name the first 2–3 services, add "and more" if there are others
+  2. Tell the user what to do: something like "You should see a service selector below — feel free to adjust, add, or remove anything. Once it looks right, hit Continue."
+- Keep both messages brief — no extra commentary, explanations, or questions`
 
 export const ONBOARDING_TOOLS: Anthropic.Tool[] = [
   {

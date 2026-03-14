@@ -1,10 +1,10 @@
 ---
 id: TASK-28
 title: Onboarding overhaul
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-13 15:13'
-updated_date: '2026-03-13 16:19'
+updated_date: '2026-03-14 06:19'
 labels: []
 dependencies: []
 priority: high

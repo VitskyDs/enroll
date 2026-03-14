@@ -167,7 +167,7 @@ export function useBasicsOnboarding(
           dispatch({ type: 'SET_STEP', step: 'confirm_services' })
           pendingWidgetRef.current = 'service_selector'
           const names = extracted.services.map((s) => s.name).join(', ') || 'none found'
-          return `Extracted: business "${extracted.name}" (${extracted.type}, ${extracted.industry}), services: ${names}. Service selector shown to user. Summarize what you found briefly, then wait for confirmation.`
+          return `Extracted: "${extracted.name}" — ${extracted.type}, services: ${names}. Service selector is now shown. Send exactly two short messages: (1) identify the business and name 2–3 services, (2) tell the user to use the selector and hit Continue.`
         } catch (err) {
           dispatch({ type: 'SET_STEP', step: 'manual_entry' })
           return `Could not extract data from ${url} (${err instanceof Error ? err.message : 'unknown error'}). Tell the user extraction failed and ask them to enter their business name, type, and top services manually. Then call submit_manual.`
@@ -195,7 +195,7 @@ export function useBasicsOnboarding(
         dispatch({ type: 'SET_STEP', step: 'confirm_services' })
         pendingWidgetRef.current = 'service_selector'
         const names = services.map((s) => s.name).join(', ')
-        return `Recorded: ${name} (${type}), services: ${names}. Service selector shown. Wait for the user to confirm.`
+        return `Recorded: "${name}" — ${type}, services: ${names}. Service selector is now shown. Send exactly two short messages: (1) identify the business and name 2–3 services, (2) tell the user to use the selector and hit Continue.`
       }
 
       default:
