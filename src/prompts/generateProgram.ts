@@ -55,7 +55,7 @@ Treat keep_fixed as hard constraints regardless of other signals.
 ### Step 3 — Apply brand personality
 If brand_personality is not null, work through each sub-field:
 
-**tone → drives program_name, brand_voice_summary, referral_rules.explanation**
+**tone → drives program_name, brand_voice_summary, referral_rules**
 - playful/irreverent: punchy unexpected naming; casual referral copy
 - warm/community-driven: naming feels like belonging; referral frames it as "bring someone in"
 - premium/minimalist: short understated names; avoid exclamation marks
@@ -73,7 +73,7 @@ If brand_personality is not null, work through each sub-field:
 - premium: emphasize access, experience, recognition over dollar discounts
 - luxury: never use % discounts as primary perk; rewards should be experiential and scarce
 
-**customer_relationship_model → drives brand_voice_summary, referral_rules.explanation, tier naming**
+**customer_relationship_model → drives brand_voice_summary, referral_rules, tier naming**
 - transactional: efficient, benefit-forward
 - community: emphasizes belonging
 - membership: access and earned status
@@ -83,36 +83,36 @@ If brand_personality is not null, work through each sub-field:
 
 **program_type**: KEEP unchanged.
 
-**program_type_reason**: REWRITE. 2–3 plain-language sentences explaining to the business owner why this specific program type was chosen for their business. Reference their industry, primary_goal, visit_frequency, and spend_variance. Owner-facing — answers "why does this program make sense for us?"
+**program_type_reason**: REWRITE. 1 plain-language sentence explaining to the business owner why this program type was chosen. Reference their primary_goal, visit_frequency, or spend_variance. Owner-facing — factual, no marketing tone.
 
 **industry**: SUBSTITUTE with the actual business industry.
 
 **program_name**: REWRITE. 1–3 words. Reflects what the business sells or the feeling it creates. Avoid "Rewards Club" or "Loyalty Points". Draw from identity_keywords if available.
 
-**program_name_explanation**: WRITE. 1–2 sentences explaining what the program name is and why it was chosen. Customer-facing — should make the name feel intentional and on-brand.
+**program_name_explanation**: WRITE. 1 sentence stating why the name was chosen. Factual, owner-facing. Example: "Named after the studio to signal an elevated, considered program."
 
 **currency_name**: REWRITE (points programs only). Rename to something on-brand. For cashback: keep as dollar value notation. For tiered: keep as spend-based notation.
 
-**currency_name_explanation**: WRITE. 1–2 sentences defining what the currency is and how it is earned, in plain language. Example: "Blooms are the points you earn at [Business Name]. You earn 1 Bloom for every dollar you spend on any service."
+**currency_name_explanation**: WRITE. 1 sentence defining the currency and earn rate. Example: "Luxe Points — earn 1 per $1 spent on any service."
 
-**earn_rules**: KEEP exactly two mechanisms — dollar_spend and rebook_on_spot. ADJUST the rate values and REWRITE the explanation for each to match this business:
-- earn_rules.dollar_spend: adjust rate value (points_per_dollar, cashback_percent, or spend_tracked) to match program type and margin. Rewrite explanation with actual currency name and business context.
-- earn_rules.rebook_on_spot: adjust bonus value. Rewrite explanation with actual currency name and what "rebooking" means for this business (next appointment, next class, next session, etc.).
+**earn_rules**: KEEP exactly two mechanisms — dollar_spend and rebook_on_spot. ADJUST the rate values to match this business:
+- earn_rules.dollar_spend: adjust rate value (points_per_dollar, cashback_percent, or spend_tracked) to match program type and margin.
+- earn_rules.rebook_on_spot: adjust bonus value.
 Do NOT add any other earn mechanisms. These two are the only ones.
 
-**redemption_rules**: KEEP structure and thresholds (keep_fixed). Substitute currency name throughout. REWRITE redemption_rules.explanation in plain language using the actual currency name and redemption value.
+**redemption_rules**: KEEP structure and thresholds (keep_fixed). Substitute currency name throughout.
 
-**reward_tiers** (tiered only): REWRITE tier names to fit brand. ADJUST thresholds and perks to what this business can actually offer. ADD an explanation field to each tier object describing who it is for and what it means to reach it.
+**reward_tiers** (tiered only): REWRITE tier names to fit brand. ADJUST thresholds and perks to what this business can actually offer.
 
-**tier_progression_rules** (tiered only): KEEP all values. Only rename starting_tier to match new tier 1 name. REWRITE tier_progression_rules.explanation in plain language.
+**tier_progression_rules** (tiered only): KEEP all values. Only rename starting_tier to match new tier 1 name.
 
-**points_expiry_rules**: ADJUST for points programs based on primary_goal (retain/revenue → 90 days, acquire → 180 days). For cashback: KEEP (365 days). For tiered: KEEP (n/a). REWRITE points_expiry_rules.explanation in plain language using actual currency name and inactivity period.
+**points_expiry_rules**: ADJUST for points programs based on primary_goal (retain/revenue → 90 days, acquire → 180 days). For cashback: KEEP (365 days). For tiered: KEEP (n/a).
 
-**bonus_rule**: KEEP as a single object (not an array). Pick the ONE most appropriate bonus trigger for this business based on primary_goal and industry. ADJUST the value. REWRITE bonus_rule.explanation in plain language using the actual currency name.
+**bonus_rule**: KEEP as a single object (not an array). Pick the ONE most appropriate bonus trigger for this business based on primary_goal and industry. ADJUST the value.
 
-**program_purpose**: WRITE 2–3 plain-language sentences explaining to the business owner why this specific program structure was chosen. Reference their specific industry, offering type, stated goal, and visit/spend patterns. Owner-facing — not marketing copy, not tone description. Answers: "Why does this program make sense for us?"
+**program_purpose**: WRITE 1–2 plain-language sentences explaining to the business owner why this specific program structure was chosen. Reference their industry, primary_goal, and visit/spend pattern. Factual, no marketing tone.
 
-**referral_rules**: KEEP the JSON structure. ADJUST reward values to fit the business context. REWRITE referral_rules.explanation in plain language using the actual currency name and brand voice. Use tone and customer_relationship_model to calibrate the explanation's register.
+**referral_rules**: KEEP the JSON structure. ADJUST reward values to fit the business context. Use tone and customer_relationship_model to calibrate brand voice.
 
 **brand_voice_summary**: REWRITE to reflect this business's identity. 2–3 sentences. Describe tone, relationship the program should communicate, one concrete example notification.
 
@@ -123,14 +123,13 @@ Do NOT add any other earn mechanisms. These two are the only ones.
 ### Step 5 — Consistency check
 
 Before outputting, verify:
-1. currency_name is identical everywhere it appears (earn_rules, redemption_rules, bonus_rule, referral_rules, points_expiry_rules, terms_and_conditions, and all explanation fields)
+1. currency_name is identical everywhere it appears (earn_rules, redemption_rules, bonus_rule, referral_rules, points_expiry_rules, terms_and_conditions)
 2. program_name is consistent throughout
 3. tier names are consistent (tiered only)
 4. Numbers in terms_and_conditions match earn_rules, redemption_rules, bonus_rule, points_expiry_rules
 5. No [bracketed placeholders] remain except [DATE], [State/Jurisdiction], [Address], [Email], [Phone]
 6. earn_rules has exactly two keys: dollar_spend and rebook_on_spot — no more, no less
 7. bonus_rule is a single object (not an array)
-8. Every JSON field has an explanation key with plain-language customer-facing copy
 
 ### Step 6 — Output format
 

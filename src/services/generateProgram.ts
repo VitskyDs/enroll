@@ -44,11 +44,7 @@ async function runGeneration(prompt: string): Promise<LoyaltyProgram> {
   }
 
   // Content moderation on key text fields
-  const referralExplanation =
-    typeof p.referral_rules === 'object' && p.referral_rules !== null
-      ? String((p.referral_rules as Record<string, unknown>).explanation ?? '')
-      : ''
-  const textToCheck = [p.program_name, p.currency_name, p.brand_voice_summary, referralExplanation].join(' ')
+  const textToCheck = [p.program_name, p.currency_name, p.brand_voice_summary, p.program_purpose].join(' ')
   if (typeof textToCheck === 'string' && !moderateText(textToCheck)) {
     throw new Error('Generated content contains inappropriate language')
   }

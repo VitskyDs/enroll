@@ -24,8 +24,8 @@ interface LocationState {
 // ---------------------------------------------------------------------------
 
 interface EarnRules {
-  dollar_spend: { points_per_dollar?: number; cashback_percent?: number; spend_tracked?: boolean; explanation: string }
-  rebook_on_spot: { bonus_points?: number; bonus_credit_cents?: number; spend_credit_multiplier?: number; explanation: string }
+  dollar_spend: { points_per_dollar?: number; cashback_percent?: number; spend_tracked?: boolean }
+  rebook_on_spot: { bonus_points?: number; bonus_credit_cents?: number; spend_credit_multiplier?: number }
 }
 
 interface BonusRule {
@@ -33,7 +33,6 @@ interface BonusRule {
   value?: number
   unit?: string
   bonus_credit_cents?: number
-  explanation: string
 }
 
 interface ReferralRules {
@@ -42,7 +41,6 @@ interface ReferralRules {
   referee_reward?: number
   referee_reward_credit_cents?: number
   trigger: string
-  explanation: string
 }
 
 interface RedemptionRules {
@@ -50,13 +48,11 @@ interface RedemptionRules {
   mechanism?: string
   minimum_to_redeem?: number
   partial_redemption_allowed?: boolean
-  explanation: string
 }
 
 interface PointsExpiryRules {
   expiry_policy?: string
   expires_after_inactivity_days?: number
-  explanation?: string
 }
 
 interface TierItem {
@@ -64,7 +60,6 @@ interface TierItem {
   tier_rank: number
   qualification_threshold: string
   perks: string[]
-  explanation?: string
 }
 
 interface TierProgression {
@@ -73,7 +68,6 @@ interface TierProgression {
   downgrade_policy?: string
   downgrade_warning?: string
   qualification_period?: string
-  explanation?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -107,6 +101,25 @@ function formatTrigger(trigger: string): string {
   return map[trigger] ?? trigger.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
+/** Derives the customer-facing sentence for the bonus rule */
+function deriveBonusCustomerText(rule: BonusRule, currencyName: string): string {
+  const triggerLabel = formatTrigger(rule.trigger).toLowerCase()
+  if (rule.unit === 'multiplier') {
+    return `Earn ${rule.value ?? 2}× ${currencyName} during your ${triggerLabel}.`
+  }
+  if (rule.unit === 'flat_credit') {
+    const cents = rule.bonus_credit_cents ?? (rule.value != null ? rule.value * 100 : 0)
+    return `Get $${(cents / 100).toFixed(0)} in bonus credit on your ${triggerLabel}.`
+  }
+  if (rule.unit === 'percent_off_next_purchase') {
+    return `Get ${rule.value}% off on your ${triggerLabel}.`
+  }
+  if (rule.value != null) {
+    return `Get ${rule.value} bonus ${currencyName} on your ${triggerLabel}.`
+  }
+  return `Bonus reward on your ${triggerLabel}.`
+}
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -122,16 +135,16 @@ function IconBox({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Standard row card: icon box + title (+ optional badge) + description */
+/** Standard row card: icon box + title (owner-facing) + optional customer text + optional badge */
 function RowCard({
   icon,
   title,
-  description,
+  customerText,
   badge,
 }: {
   icon: React.ReactNode
   title: React.ReactNode
-  description?: string
+  customerText?: string
   badge?: React.ReactNode
 }) {
   return (
@@ -142,8 +155,13 @@ function RowCard({
           <p className="flex-1 text-[15px] font-medium text-zinc-900 leading-6 min-w-0">{title}</p>
           {badge}
         </div>
-        {description && (
-          <p className="text-sm font-medium text-zinc-500 leading-5">{description}</p>
+        {customerText && (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 leading-4 mb-0.5">
+              For customers
+            </p>
+            <p className="text-sm font-medium text-zinc-500 leading-5">{customerText}</p>
+          </div>
         )}
       </div>
     </div>
@@ -213,6 +231,7 @@ export default function ProgramPreviewPage() {
   }
 
   const { program } = state
+  const cur = program.currency_name
 
   const earnRules = program.earn_rules as EarnRules
   const bonusRule = program.bonus_rule as BonusRule
@@ -223,28 +242,87 @@ export default function ProgramPreviewPage() {
   const tierProgression = program.tier_progression_rules as TierProgression | null
   const isTiered = rewardTiers.length > 0
 
-  // Earn rule title label (dollar spend card)
+  // ── Derived owner labels (titles) ──────────────────────────────────────────
+
   const dollarSpendTitle =
     earnRules?.dollar_spend?.points_per_dollar != null
-      ? `${earnRules.dollar_spend.points_per_dollar} ${program.currency_name} per $1`
+      ? `${earnRules.dollar_spend.points_per_dollar} ${cur} per $1`
       : earnRules?.dollar_spend?.cashback_percent != null
         ? `${earnRules.dollar_spend.cashback_percent}% cash back per $1`
         : 'Earn on every dollar'
 
-  // Referral reward text
+  const rebookTitle =
+    earnRules?.rebook_on_spot?.bonus_points != null
+      ? `+${earnRules.rebook_on_spot.bonus_points} ${cur} on rebook`
+      : earnRules?.rebook_on_spot?.bonus_credit_cents != null
+        ? `+$${(earnRules.rebook_on_spot.bonus_credit_cents / 100).toFixed(0)} credit on rebook`
+        : earnRules?.rebook_on_spot?.spend_credit_multiplier != null
+          ? `${earnRules.rebook_on_spot.spend_credit_multiplier}× spend on rebook`
+          : 'Rebook on the spot'
+
+  const redemptionTitle =
+    redemptionRules?.minimum_to_redeem != null && redemptionRules?.redemption_value
+      ? `${redemptionRules.minimum_to_redeem} ${cur} = ${redemptionRules.redemption_value.split('=')[1]?.trim() ?? redemptionRules.redemption_value}`
+      : redemptionRules?.redemption_value ?? 'Redemption'
+
+  const expiryTitle =
+    pointsExpiry?.expires_after_inactivity_days != null
+      ? `${pointsExpiry.expires_after_inactivity_days}-day activity window`
+      : 'Points expiry'
+
+  // ── Derived customer-facing text ───────────────────────────────────────────
+
+  const dollarSpendCustomerText =
+    earnRules?.dollar_spend?.points_per_dollar != null
+      ? `Earn ${earnRules.dollar_spend.points_per_dollar} ${cur} for every dollar you spend.`
+      : earnRules?.dollar_spend?.cashback_percent != null
+        ? `Earn ${earnRules.dollar_spend.cashback_percent}% back on every dollar you spend.`
+        : earnRules?.dollar_spend?.spend_tracked
+          ? 'Every dollar you spend counts toward your membership tier.'
+          : undefined
+
+  const rebookCustomerText =
+    earnRules?.rebook_on_spot?.bonus_points != null
+      ? `Book your next appointment before leaving and earn ${earnRules.rebook_on_spot.bonus_points} bonus ${cur}.`
+      : earnRules?.rebook_on_spot?.bonus_credit_cents != null
+        ? `Book your next appointment before leaving and earn $${(earnRules.rebook_on_spot.bonus_credit_cents / 100).toFixed(0)} in bonus credit.`
+        : earnRules?.rebook_on_spot?.spend_credit_multiplier != null
+          ? `Book your next appointment before leaving — your spend counts at ${earnRules.rebook_on_spot.spend_credit_multiplier}× toward your tier.`
+          : undefined
+
+  const redemptionCustomerText =
+    redemptionRules?.mechanism
+      ? 'Benefits apply automatically based on your current tier — no action needed.'
+      : redemptionRules?.minimum_to_redeem != null && redemptionRules?.redemption_value
+        ? `Once you have ${redemptionRules.minimum_to_redeem} ${cur}, redeem for ${redemptionRules.redemption_value}.`
+        : undefined
+
+  const expiryCustomerText =
+    pointsExpiry?.expires_after_inactivity_days != null
+      ? `${cur} expire after ${pointsExpiry.expires_after_inactivity_days} days without a visit.`
+      : undefined
+
+  const bonusCustomerText = bonusRule ? deriveBonusCustomerText(bonusRule, cur) : undefined
+
+  // Referral reward labels
   const referrerAmt = referralRules?.referrer_reward
   const refereeAmt = referralRules?.referee_reward
-  const referralRewardText =
+  const referralOwnerText =
     referrerAmt != null && refereeAmt != null
-      ? `You earn ${referrerAmt} ${program.currency_name} · friend earns ${refereeAmt}`
+      ? `+${referrerAmt} / +${refereeAmt} ${cur}`
       : referralRules?.referrer_reward_credit_cents != null
-        ? `You earn $${(referralRules.referrer_reward_credit_cents / 100).toFixed(0)} credit`
-        : 'Both parties rewarded'
+        ? `+$${(referralRules.referrer_reward_credit_cents / 100).toFixed(0)} store credit`
+        : undefined
+  const referralCustomerText =
+    referrerAmt != null && refereeAmt != null
+      ? `Refer a friend — you earn ${referrerAmt} ${cur}, they earn ${refereeAmt}.`
+      : referralRules?.referrer_reward_credit_cents != null
+        ? `Refer a friend and earn $${(referralRules.referrer_reward_credit_cents / 100).toFixed(0)} in store credit.`
+        : 'Both you and your friend get rewarded.'
 
   const showExpiry =
     pointsExpiry?.expires_after_inactivity_days != null &&
-    pointsExpiry.expiry_policy !== 'not applicable' &&
-    !!pointsExpiry.explanation
+    pointsExpiry.expiry_policy !== 'not applicable'
 
   const bonusValueLabel = bonusRule ? formatBonusValue(bonusRule) : null
 
@@ -287,45 +365,45 @@ export default function ProgramPreviewPage() {
               <RowCard
                 icon={<Megaphone className="size-5" />}
                 title="Brand voice"
-                description={program.brand_voice_summary}
+                customerText={program.brand_voice_summary}
               />
 
               {/* Program type */}
               <RowCard
                 icon={<Settings2 className="size-5" />}
                 title={PROGRAM_TYPE_LABELS[program.program_type]}
-                description={program.program_type_reason}
+                customerText={program.program_type_reason}
               />
 
               {/* Currency */}
               <RowCard
                 icon={<Coins className="size-5" />}
                 title={program.currency_name}
-                description={program.currency_name_explanation}
+                customerText={program.currency_name_explanation}
               />
 
               {/* Earn: dollar spend */}
               <RowCard
                 icon={<ClipboardCheck className="size-5" />}
                 title={dollarSpendTitle}
-                description={earnRules?.dollar_spend?.explanation}
+                customerText={dollarSpendCustomerText}
               />
 
               {/* Earn: rebook on spot */}
-              {earnRules?.rebook_on_spot?.explanation && (
+              {earnRules?.rebook_on_spot && (
                 <RowCard
                   icon={<CalendarCheck className="size-5" />}
-                  title="Rebook on the spot"
-                  description={earnRules.rebook_on_spot.explanation}
+                  title={rebookTitle}
+                  customerText={rebookCustomerText}
                 />
               )}
 
               {/* Redemption */}
-              {redemptionRules?.explanation && (
+              {redemptionRules && (
                 <RowCard
                   icon={<TicketCheck className="size-5" />}
-                  title={redemptionRules.redemption_value ?? 'Redemption'}
-                  description={redemptionRules.explanation}
+                  title={redemptionTitle}
+                  customerText={redemptionCustomerText}
                 />
               )}
 
@@ -338,7 +416,6 @@ export default function ProgramPreviewPage() {
               <SectionHeading
                 title={`${rewardTiers.length} membership tiers`}
                 subtitle={
-                  tierProgression?.explanation ??
                   [tierProgression?.starting_tier, tierProgression?.upgrade_timing]
                     .filter(Boolean)
                     .join(' · ')
@@ -351,7 +428,7 @@ export default function ProgramPreviewPage() {
                     key={tier.tier_rank}
                     icon={TIER_ICONS[i % TIER_ICONS.length]}
                     title={tier.tier_name}
-                    description={tier.explanation ?? tier.perks?.slice(0, 2).join(' · ')}
+                    customerText={tier.perks?.slice(0, 2).join(' · ')}
                     badge={<TierBadge rank={tier.tier_rank} label={tier.qualification_threshold} />}
                   />
                 ))}
@@ -370,12 +447,12 @@ export default function ProgramPreviewPage() {
           {/* ── Section 3: Bonus rewards ── */}
           {bonusRule && (
             <div className="flex flex-col gap-4">
-              <SectionHeading title="Bonus rewards" subtitle={bonusRule.explanation} />
+              <SectionHeading title="Bonus rewards" />
               <div className="flex flex-col gap-4">
                 <RowCard
                   icon={<Gift className="size-5" />}
                   title={formatTrigger(bonusRule.trigger)}
-                  description={bonusRule.explanation}
+                  customerText={bonusCustomerText}
                   badge={
                     bonusValueLabel ? (
                       <span className="bg-zinc-100 text-zinc-700 text-xs font-semibold px-2 py-0.5 rounded shrink-0">
@@ -391,7 +468,7 @@ export default function ProgramPreviewPage() {
           {/* ── Section 4: Referral program ── */}
           {referralRules && (
             <div className="flex flex-col gap-4">
-              <SectionHeading title="Referral program" subtitle={referralRules.explanation} />
+              <SectionHeading title="Referral program" />
               <div className="bg-white border border-zinc-200 rounded-lg flex items-start gap-3 p-3">
                 {/* Overlapping avatar circles */}
                 <div className="flex items-center pr-2 shrink-0">
@@ -403,8 +480,15 @@ export default function ProgramPreviewPage() {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col gap-1 py-0.5">
-                  <p className="text-[15px] font-medium text-zinc-900 leading-6">Refer a friend</p>
-                  <p className="text-sm font-medium text-zinc-500 leading-5">{referralRewardText}</p>
+                  <p className="text-[15px] font-medium text-zinc-900 leading-6">
+                    {referralOwnerText ?? 'Refer a friend'}
+                  </p>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 leading-4 mb-0.5">
+                      For customers
+                    </p>
+                    <p className="text-sm font-medium text-zinc-500 leading-5">{referralCustomerText}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -413,8 +497,10 @@ export default function ProgramPreviewPage() {
           {/* ── Points expiry compact section ── */}
           {showExpiry && (
             <div className="flex flex-col gap-1">
-              <p className="text-[20px] font-semibold text-zinc-900 leading-[26px]">Points expiry</p>
-              <p className="text-sm font-medium text-zinc-500 leading-5">{pointsExpiry.explanation}</p>
+              <p className="text-[20px] font-semibold text-zinc-900 leading-[26px]">{expiryTitle}</p>
+              {expiryCustomerText && (
+                <p className="text-sm font-medium text-zinc-500 leading-5">{expiryCustomerText}</p>
+              )}
             </div>
           )}
 

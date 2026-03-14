@@ -41,32 +41,24 @@ export const DEMO_PROGRAM: LoyaltyProgram = {
   business_id: 'demo-business',
   created_at: new Date().toISOString(),
   program_type: 'points',
-  program_type_reason:
-    'A points program is the right fit for Luxe Studio because your clients visit on a predictable schedule and spend consistently each time. Points create a clear, tangible reason to come back — every service moves them closer to a reward they can see accumulating. For a retention-focused salon at your price point, this structure rewards loyalty without devaluing the experience.',
+  program_type_reason: 'Points suit your clients because they visit on a consistent schedule and spend predictably — every service builds toward a reward.',
   industry: 'health & beauty',
   program_name: 'Luxe Rewards',
-  program_name_explanation:
-    'Luxe Rewards takes its name from the studio itself — a program that feels as considered and elevated as the services you deliver. It signals that loyalty here comes with a premium experience, not just a discount.',
+  program_name_explanation: 'Named after the studio to signal an elevated, considered program.',
   currency_name: 'Luxe Points',
-  currency_name_explanation:
-    'Luxe Points are the currency you earn at Luxe Studio. You earn 1 Luxe Point for every dollar you spend on any service — they accumulate quietly and are ready to redeem whenever you choose.',
+  currency_name_explanation: 'Luxe Points — earn 1 per $1 spent on any service at Luxe Studio.',
   earn_rules: {
     dollar_spend: {
       points_per_dollar: 1,
-      explanation: 'Earn 1 Luxe Point for every dollar you spend on any service at Luxe Studio.',
     },
     rebook_on_spot: {
       bonus_points: 50,
-      explanation:
-        'Book your next appointment before you leave and earn 50 bonus Luxe Points — a small thank-you for planning ahead.',
     },
   },
   redemption_rules: {
     minimum_to_redeem: 200,
     redemption_value: '200 Luxe Points = $10',
     partial_redemption_allowed: true,
-    explanation:
-      "Once you've collected 200 Luxe Points, you can redeem them for $10 off any service. You can use points in any increment of 200 — they never expire as long as you visit within 90 days.",
   },
   reward_tiers: null,
   tier_progression_rules: null,
@@ -74,24 +66,17 @@ export const DEMO_PROGRAM: LoyaltyProgram = {
     expiry_policy: 'rolling',
     expires_after_inactivity_days: 90,
     warning_notification_days_before: 14,
-    explanation:
-      "Your Luxe Points stay active as long as you visit at least once every 90 days. We'll remind you before they expire so you never lose what you've earned.",
   },
   bonus_rule: {
     trigger: 'birthday_month',
     value: 2,
     unit: 'multiplier',
-    explanation:
-      'Earn double Luxe Points on any service booked during your birthday month — our way of making sure you treat yourself.',
   },
-  program_purpose:
-    "Luxe Studio's clients are regulars who return every four to eight weeks and spend consistently on premium services. A points program keeps retention front and center — every visit has a reward signal attached, which is exactly what drives rebooking behaviour in appointment-based businesses. The earn-on-spend mechanic is simple enough to explain at checkout, and the 200-point threshold maps naturally to two or three visits, creating a satisfying, attainable loop.",
+  program_purpose: 'A points program fits because your clients visit regularly and spend consistently — every appointment earns toward a reward, and the 200-point threshold maps to roughly two to three visits.',
   referral_rules: {
     referrer_reward: 100,
     referee_reward: 50,
     trigger: 'referee_first_visit',
-    explanation:
-      'Know someone who would love Luxe Studio? Share your referral link — when they book and complete their first appointment, you earn 100 Luxe Points and they start with 50.',
   },
   brand_voice_summary:
     `Elevated, warm, and personal. The program should feel like a natural extension of the studio experience — understated but rewarding. Celebrate milestones quietly and make every client feel like a regular. Example notification: "You've earned enough for a reward. Book your next appointment and let us apply it."`,

@@ -23,20 +23,18 @@ export interface Archetype {
 export const ARCHETYPES: Archetype[] = [
   {
     program_type: 'points',
-    program_type_reason: 'A points-based program suits high-frequency businesses with consistent spend — customers visit often enough to accumulate points quickly, and flat points reward every transaction without requiring complex tier tracking.',
+    program_type_reason: 'Points suit high-frequency businesses with consistent spend — customers accumulate quickly and every transaction is rewarded.',
     industry: 'food & beverage',
     program_name: 'Sip Rewards',
-    program_name_explanation: 'Sip Rewards ties the program name to the core product — a drink. It is short, on-brand, and immediately tells customers what they are earning toward.',
+    program_name_explanation: 'Named after the core product — short, on-brand, and immediately clear to customers.',
     currency_name: 'Sips',
-    currency_name_explanation: 'Sips are the points you earn at this business. You earn 1 Sip for every dollar you spend on any qualifying purchase.',
+    currency_name_explanation: 'Sips — earn 1 per $1 spent on any qualifying purchase.',
     earn_rules: {
       dollar_spend: {
         points_per_dollar: 1,
-        explanation: 'Earn 1 Sip for every dollar you spend.',
       },
       rebook_on_spot: {
         bonus_points: 20,
-        explanation: 'Book your next visit before you leave and earn 20 bonus Sips.',
       },
     },
     redemption_rules: {
@@ -46,7 +44,6 @@ export const ARCHETYPES: Archetype[] = [
       redeemable_on: ['any purchase', 'in-store and online'],
       cannot_redeem_on: ['alcohol', 'gift cards'],
       partial_redemption_allowed: true,
-      explanation: 'Once you have 100 Sips, you can redeem them for $5 off any qualifying purchase.',
     },
     reward_tiers: null,
     tier_progression_rules: null,
@@ -54,19 +51,16 @@ export const ARCHETYPES: Archetype[] = [
       expiry_policy: 'rolling',
       expires_after_inactivity_days: 180,
       warning_notification_days_before: 30,
-      explanation: 'Your Sips are valid as long as you make at least one qualifying purchase every 180 days. We\'ll remind you 30 days before any points are set to expire.',
     },
     bonus_rule: {
       trigger: 'birthday_month',
       value: 2,
       unit: 'multiplier',
-      explanation: 'Earn double Sips on any purchase made during your birthday month.',
     },
     referral_rules: {
       referrer_reward: 30,
       referee_reward: 20,
       trigger: 'referee_first_purchase',
-      explanation: 'Share your referral link or code. When a friend makes their first purchase, you earn 30 Sips and they start with 20.',
     },
     brand_voice_summary: 'Warm, community-focused, and approachable. The program should feel like a thank-you from a local business, not a corporate scheme. Use first-name messaging and celebrate milestones.',
     llm_customization_hints: {
@@ -88,25 +82,22 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     program_type: 'tiered',
-    program_type_reason: 'A tiered program suits businesses where customer spend varies significantly. Tiers recognize and retain high-value clients with meaningful perks while still rewarding casual visitors — and the spend-based structure naturally encourages customers to increase visits to reach the next level.',
+    program_type_reason: 'Tiers suit businesses with significant spend variance — they reward high-value clients with meaningful perks while still recognizing casual visitors.',
     industry: 'retail — specialty',
     program_name: 'The Inner Circle',
-    program_name_explanation: 'The Inner Circle positions the program as exclusive membership rather than a transactional points scheme. It signals that higher tiers represent genuine recognition, not just accumulated discounts.',
+    program_name_explanation: "Positions the program as exclusive membership rather than a transactional scheme — signals genuine recognition.",
     currency_name: 'annual spend (no named points currency — tier is spend-based)',
-    currency_name_explanation: 'This program does not use points. Your tier is determined by how much you spend with us over a rolling 12-month period. The more you spend, the higher your tier and the better your perks.',
+    currency_name_explanation: 'No points — tier is based on rolling 12-month spend. The more you spend, the higher your tier.',
     earn_rules: {
       dollar_spend: {
         spend_tracked: true,
-        explanation: 'Every dollar you spend counts toward your annual total and determines your tier.',
       },
       rebook_on_spot: {
         spend_credit_multiplier: 1.25,
-        explanation: 'Book your next appointment before you leave — your spend counts at 1.25× toward your annual tier total.',
       },
     },
     redemption_rules: {
       mechanism: 'perks are automatic and tier-based, not redeemed manually',
-      explanation: 'You do not redeem anything — your benefits activate automatically based on your current tier. Discounts apply at checkout without any action needed from you.',
     },
     reward_tiers: [
       {
@@ -118,7 +109,6 @@ export const ARCHETYPES: Archetype[] = [
           'Early access to sale events (24 hours before public)',
           'Free standard shipping on orders over $75',
         ],
-        explanation: 'Member is the entry tier — every customer who enrolls starts here automatically.',
       },
       {
         tier_name: 'Insider',
@@ -131,7 +121,6 @@ export const ARCHETYPES: Archetype[] = [
           'Exclusive insider-only product drops',
           'Dedicated customer service line',
         ],
-        explanation: 'Insider unlocks once you spend $500 in a rolling 12-month period. You keep this tier as long as you maintain that spend level.',
       },
       {
         tier_name: 'Icon',
@@ -145,7 +134,6 @@ export const ARCHETYPES: Archetype[] = [
           'Invitation to private events and product previews',
           'Personal consultant access',
         ],
-        explanation: 'Icon is the top tier, reserved for our most valued customers. It unlocks at $1,500 in annual spend and comes with the highest level of perks and recognition.',
       },
     ],
     tier_progression_rules: {
@@ -154,25 +142,21 @@ export const ARCHETYPES: Archetype[] = [
       downgrade_policy: 'Tier is re-evaluated annually. If spend drops below threshold, customer drops one tier (not to bottom), with a 90-day grace period after renewal date.',
       downgrade_warning: 'Notification sent 60 days before renewal date showing spend needed to maintain current tier.',
       starting_tier: 'Member — all enrollees start here regardless of prior spend history.',
-      explanation: 'Your tier updates automatically — upgrades happen the moment you cross a threshold, and downgrades come with a 90-day grace period so you have time to maintain your status.',
     },
     points_expiry_rules: {
       expiry_policy: 'not applicable — this is a spend-based tier program with no points currency',
       tier_status_expiry: 'See tier_progression_rules for how tier status is maintained or lost.',
-      explanation: 'There are no points to expire in this program. Your tier status is based on your 12-month rolling spend and is reviewed annually.',
     },
     bonus_rule: {
       trigger: 'tier_upgrade',
       reward_description: 'one-time welcome discount at new tier',
       value: 20,
       unit: 'percent_off_next_purchase',
-      explanation: 'When you reach a new tier, you get 20% off your next purchase as a welcome to that level — applied automatically.',
     },
     referral_rules: {
       referrer_reward_credit_cents: 2500,
       referee_reward_discount_percent: 10,
       trigger: 'referee_reaches_insider',
-      explanation: 'Refer a friend and earn a $25 store credit when they reach Insider status. Your friend starts at Member with a 10% welcome discount on their first order.',
     },
     brand_voice_summary: 'Elevated, aspirational, and insider-feeling. The program should make customers feel recognized and chosen, not just discounted. Language should be warm but polished.',
     llm_customization_hints: {
@@ -199,20 +183,18 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     program_type: 'cashback',
-    program_type_reason: 'A cashback program suits value-conscious customers who visit infrequently. Immediate, tangible cashback gives new customers a clear reason to return without asking them to accumulate abstract points over a long period. It is also the easiest program type to communicate.',
+    program_type_reason: 'Cashback suits value-conscious, infrequent visitors — tangible dollar credit is easy to communicate and gives a clear reason to return.',
     industry: 'grocery & pharmacy',
     program_name: 'Cart Credit',
-    program_name_explanation: 'Cart Credit directly describes what the program does — you fill your cart and earn credit back. It is plain, honest, and works for a value-conscious audience.',
+    program_name_explanation: 'Directly describes what the program does — fill your cart, earn credit back.',
     currency_name: 'store credit (displayed as $ value, not points)',
-    currency_name_explanation: 'This program gives you real dollar credit back on every qualifying purchase. Your balance is always displayed as a dollar amount — no points to convert or track.',
+    currency_name_explanation: 'Real dollar credit back on every qualifying purchase — always displayed as a $ amount.',
     earn_rules: {
       dollar_spend: {
         cashback_percent: 2,
-        explanation: 'Earn 2% back as store credit on every dollar you spend.',
       },
       rebook_on_spot: {
         bonus_credit_cents: 500,
-        explanation: 'Schedule your next visit before you leave and earn $5 in bonus store credit.',
       },
     },
     redemption_rules: {
@@ -222,7 +204,6 @@ export const ARCHETYPES: Archetype[] = [
       redeemable_on: ['any in-store or online purchase'],
       cannot_redeem_on: ['alcohol where restricted by law', 'lottery tickets', 'gift cards'],
       partial_redemption_allowed: true,
-      explanation: 'Once you have $5 in store credit, it is applied automatically at your next checkout. You can turn off auto-apply in your account settings if you prefer to save it for a larger purchase.',
     },
     reward_tiers: null,
     tier_progression_rules: null,
@@ -230,20 +211,17 @@ export const ARCHETYPES: Archetype[] = [
       expiry_policy: 'rolling',
       expires_after_inactivity_days: 365,
       warning_notification_days_before: 45,
-      explanation: 'Your store credit stays active as long as you make at least one qualifying purchase per year. We will remind you 45 days before any credit is set to expire.',
     },
     bonus_rule: {
       trigger: 'first_purchase',
       bonus_credit_cents: 500,
       unit: 'flat_credit',
-      explanation: 'Earn $5 in store credit instantly on your first qualifying purchase after signing up.',
     },
     referral_rules: {
       referrer_reward_credit_cents: 500,
       referee_reward_credit_cents: 500,
       trigger: 'referee_first_purchase',
       minimum_referee_spend_cents: 1000,
-      explanation: 'Refer a friend and you both get $5 in store credit when they make their first purchase of $10 or more. There is no limit to how many friends you can refer.',
     },
     brand_voice_summary: "Straightforward, honest, and value-focused. Never use jargon or gamification language. The program should communicate 'you save real money every time you shop here'.",
     llm_customization_hints: {

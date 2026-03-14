@@ -26,15 +26,27 @@ function featureTitle(key: FeatureKey): string {
 function FeatureCards({ featureKey, program }: { featureKey: FeatureKey; program: LoyaltyProgram }) {
   switch (featureKey) {
     case 'earn-rules': {
-      const rules = program.earn_rules
+      const ds = program.earn_rules?.dollar_spend as Record<string, unknown> | undefined
+      const rb = program.earn_rules?.rebook_on_spot as Record<string, unknown> | undefined
+      const cur = program.currency_name
+      const dsText = ds?.points_per_dollar != null
+        ? `Earn ${ds.points_per_dollar} ${cur} for every dollar you spend.`
+        : ds?.cashback_percent != null
+          ? `Earn ${ds.cashback_percent}% back on every dollar you spend.`
+          : ds?.spend_tracked
+            ? 'Every dollar you spend counts toward your membership tier.'
+            : null
+      const rbText = rb?.bonus_points != null
+        ? `Book your next appointment before leaving and earn ${rb.bonus_points} bonus ${cur}.`
+        : rb?.bonus_credit_cents != null
+          ? `Book your next appointment before leaving and earn $${(Number(rb.bonus_credit_cents) / 100).toFixed(0)} in bonus credit.`
+          : rb?.spend_credit_multiplier != null
+            ? `Book your next appointment before leaving — your spend counts at ${rb.spend_credit_multiplier}× toward your tier.`
+            : null
       return (
         <>
-          {rules.dollar_spend?.explanation && (
-            <Card>{String(rules.dollar_spend.explanation)}</Card>
-          )}
-          {rules.rebook_on_spot?.explanation && (
-            <Card>{String(rules.rebook_on_spot.explanation)}</Card>
-          )}
+          {dsText && <Card>{dsText}</Card>}
+          {rbText && <Card>{rbText}</Card>}
         </>
       )
     }
@@ -52,12 +64,32 @@ function FeatureCards({ featureKey, program }: { featureKey: FeatureKey; program
           ))}
         </>
       ) : <Card>No reward tiers configured</Card>
-    case 'bonus-rules':
-      return program.bonus_rule?.explanation ? (
-        <Card>{String(program.bonus_rule.explanation)}</Card>
-      ) : <Card>No bonus rule configured</Card>
-    case 'referral':
-      return <Card>{(program.referral_rules?.explanation as string) || 'No referral program configured'}</Card>
+    case 'bonus-rules': {
+      const rule = program.bonus_rule as Record<string, unknown> | undefined
+      if (!rule) return <Card>No bonus rule configured</Card>
+      const cur = program.currency_name
+      const trigger = (rule.trigger as string | undefined) ?? ''
+      const label = trigger.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).toLowerCase()
+      let text = ''
+      if (rule.unit === 'multiplier') text = `Earn ${rule.value ?? 2}× ${cur} during your ${label}.`
+      else if (rule.unit === 'flat_credit') text = `Get $${(Number(rule.bonus_credit_cents ?? 0) / 100).toFixed(0)} in bonus credit on your ${label}.`
+      else if (rule.unit === 'percent_off_next_purchase') text = `Get ${rule.value}% off on your ${label}.`
+      else text = `Get ${rule.value} bonus ${cur} on your ${label}.`
+      return <Card>{text}</Card>
+    }
+    case 'referral': {
+      const ref = program.referral_rules as Record<string, unknown> | undefined
+      if (!ref) return <Card>No referral program configured</Card>
+      const cur = program.currency_name
+      const r = ref.referrer_reward
+      const e = ref.referee_reward
+      const text = r != null && e != null
+        ? `Refer a friend — you earn ${r} ${cur}, they earn ${e}.`
+        : ref.referrer_reward_credit_cents != null
+          ? `Refer a friend and earn $${(Number(ref.referrer_reward_credit_cents) / 100).toFixed(0)} in store credit.`
+          : 'Both you and your friend get rewarded.'
+      return <Card>{text}</Card>
+    }
     case 'brand-voice':
       return (
         <>
