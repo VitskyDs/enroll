@@ -1,3 +1,4 @@
 {
+  "installCommand": "cd ../.. && npm install",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
