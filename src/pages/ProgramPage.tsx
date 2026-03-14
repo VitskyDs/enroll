@@ -9,20 +9,22 @@ type FeatureKey = 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'referral' | '
 
 function shortDescription(program: LoyaltyProgram, key: FeatureKey): string {
   switch (key) {
-    case 'earn-rules':
-      return program.earn_rules?.base_rate ?? 'View earn rules'
+    case 'earn-rules': {
+      const explanation = program.earn_rules?.dollar_spend?.explanation as string | undefined
+      return explanation ? explanation.slice(0, 60) + '…' : 'View earn rules'
+    }
     case 'reward-tiers':
       return Array.isArray(program.reward_tiers) && program.reward_tiers.length > 0
         ? `${program.reward_tiers.length} tiers`
         : 'No tiers'
-    case 'bonus-rules':
-      return Array.isArray(program.bonus_rules)
-        ? `${program.bonus_rules.length} bonus rules`
-        : 'View bonus rules'
-    case 'referral':
-      return program.referral_description
-        ? program.referral_description.slice(0, 60) + '…'
-        : 'View referral program'
+    case 'bonus-rules': {
+      const explanation = program.bonus_rule?.explanation as string | undefined
+      return explanation ? explanation.slice(0, 60) + '…' : 'View bonus rule'
+    }
+    case 'referral': {
+      const explanation = program.referral_rules?.explanation as string | undefined
+      return explanation ? explanation.slice(0, 60) + '…' : 'View referral program'
+    }
     case 'brand-voice':
       return program.brand_voice_summary
         ? program.brand_voice_summary.slice(0, 60) + '…'

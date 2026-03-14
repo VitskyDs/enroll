@@ -29,16 +29,12 @@ function FeatureCards({ featureKey, program }: { featureKey: FeatureKey; program
       const rules = program.earn_rules
       return (
         <>
-          {rules.base_rate && <Card>{String(rules.base_rate)}</Card>}
-          {Array.isArray(rules.qualifying_actions) && rules.qualifying_actions.map((action: Record<string, unknown>, i: number) => (
-            <Card key={i}>
-              {[
-                String(action.action ?? '').replace(/_/g, ' '),
-                action.rate ? `Rate: ${action.rate}` : null,
-                action.notes ? `Note: ${action.notes}` : null,
-              ].filter(Boolean).join('\n')}
-            </Card>
-          ))}
+          {rules.dollar_spend?.explanation && (
+            <Card>{String(rules.dollar_spend.explanation)}</Card>
+          )}
+          {rules.rebook_on_spot?.explanation && (
+            <Card>{String(rules.rebook_on_spot.explanation)}</Card>
+          )}
         </>
       )
     }
@@ -57,23 +53,11 @@ function FeatureCards({ featureKey, program }: { featureKey: FeatureKey; program
         </>
       ) : <Card>No reward tiers configured</Card>
     case 'bonus-rules':
-      return Array.isArray(program.bonus_rules) ? (
-        <>
-          {program.bonus_rules.map((rule: Record<string, unknown>, i: number) => (
-            <Card key={i}>
-              {[
-                String(rule.trigger ?? '').replace(/_/g, ' '),
-                rule.multiplier ? `${rule.multiplier}× multiplier` : null,
-                rule.bonus_sips != null ? `+${rule.bonus_sips} ${program.currency_name}` : null,
-                rule.bonus_credit != null ? `+$${rule.bonus_credit}` : null,
-                rule.notes ? String(rule.notes) : null,
-              ].filter(Boolean).join('\n')}
-            </Card>
-          ))}
-        </>
-      ) : <Card>No bonus rules configured</Card>
+      return program.bonus_rule?.explanation ? (
+        <Card>{String(program.bonus_rule.explanation)}</Card>
+      ) : <Card>No bonus rule configured</Card>
     case 'referral':
-      return <Card>{program.referral_description || 'No referral program configured'}</Card>
+      return <Card>{(program.referral_rules?.explanation as string) || 'No referral program configured'}</Card>
     case 'brand-voice':
       return (
         <>
