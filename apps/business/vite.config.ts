@@ -30,7 +30,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@enroll/shared': path.resolve(__dirname, '../../packages/shared/src'),
     },
   },
 })
