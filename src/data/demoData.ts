@@ -66,7 +66,7 @@ export const DEMO_PROGRAM: LoyaltyProgram = {
     redemption_value: '200 Luxe Points = $10',
     partial_redemption_allowed: true,
     explanation:
-      'Once you've collected 200 Luxe Points, you can redeem them for $10 off any service. You can use points in any increment of 200 — they never expire as long as you visit within 90 days.',
+      "Once you've collected 200 Luxe Points, you can redeem them for $10 off any service. You can use points in any increment of 200 — they never expire as long as you visit within 90 days.",
   },
   reward_tiers: null,
   tier_progression_rules: null,
@@ -75,7 +75,7 @@ export const DEMO_PROGRAM: LoyaltyProgram = {
     expires_after_inactivity_days: 90,
     warning_notification_days_before: 14,
     explanation:
-      'Your Luxe Points stay active as long as you visit at least once every 90 days. We'll remind you before they expire so you never lose what you've earned.',
+      "Your Luxe Points stay active as long as you visit at least once every 90 days. We'll remind you before they expire so you never lose what you've earned.",
   },
   bonus_rule: {
     trigger: 'birthday_month',
@@ -85,7 +85,7 @@ export const DEMO_PROGRAM: LoyaltyProgram = {
       'Earn double Luxe Points on any service booked during your birthday month — our way of making sure you treat yourself.',
   },
   program_purpose:
-    'Luxe Studio's clients are regulars who return every four to eight weeks and spend consistently on premium services. A points program keeps retention front and center — every visit has a reward signal attached, which is exactly what drives rebooking behaviour in appointment-based businesses. The earn-on-spend mechanic is simple enough to explain at checkout, and the 200-point threshold maps naturally to two or three visits, creating a satisfying, attainable loop.',
+    "Luxe Studio's clients are regulars who return every four to eight weeks and spend consistently on premium services. A points program keeps retention front and center — every visit has a reward signal attached, which is exactly what drives rebooking behaviour in appointment-based businesses. The earn-on-spend mechanic is simple enough to explain at checkout, and the 200-point threshold maps naturally to two or three visits, creating a satisfying, attainable loop.",
   referral_rules: {
     referrer_reward: 100,
     referee_reward: 50,
@@ -94,7 +94,7 @@ export const DEMO_PROGRAM: LoyaltyProgram = {
       'Know someone who would love Luxe Studio? Share your referral link — when they book and complete their first appointment, you earn 100 Luxe Points and they start with 50.',
   },
   brand_voice_summary:
-    'Elevated, warm, and personal. The program should feel like a natural extension of the studio experience — understated but rewarding. Celebrate milestones quietly and make every client feel like a regular. Example notification: "You've earned enough for a reward. Book your next appointment and let us apply it."',
+    `Elevated, warm, and personal. The program should feel like a natural extension of the studio experience — understated but rewarding. Celebrate milestones quietly and make every client feel like a regular. Example notification: "You've earned enough for a reward. Book your next appointment and let us apply it."`,
   llm_customization_hints: {},
   terms_and_conditions:
     'LUXE REWARDS — TERMS AND CONDITIONS\n\n1. Members earn 1 Luxe Point per $1 spent on qualifying services at Luxe Studio.\n2. 50 bonus Luxe Points are awarded when a member rebooks their next appointment before leaving.\n3. Points may be redeemed once a balance of 200 has accumulated. 200 Luxe Points = $10 off any service.\n4. Partial redemption is allowed in increments of 200 points.\n5. Points expire after 90 days of account inactivity. Members will be notified 14 days before expiry.\n6. Birthday month bonus: members earn 2× Luxe Points on all services during their birthday month.\n7. Referral rewards: referring member earns 100 Luxe Points; referred friend earns 50 Luxe Points upon completing their first appointment.\n8. Points have no cash value and cannot be transferred, sold, or combined with other offers.\n9. Luxe Studio reserves the right to modify or terminate the program at any time with reasonable notice.\n10. For questions, contact us at [Email] or visit us at [Address].',

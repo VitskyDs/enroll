@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Volume2, Award, Zap, DollarSign, CalendarCheck, Gift, Clock,
-  Star, UserPlus, TrendingUp, ChevronDown, ChevronUp,
+  Megaphone, Settings2, Coins, ClipboardCheck, CalendarCheck, TicketCheck,
+  Gift, Flag, Trophy, Crown, Users, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { saveToSupabase } from '@/services/saveToSupabase'
 import { PROGRAM_TYPE_LABELS } from '@/services/recommendProgram'
-import type { BusinessOnboardingData, LoyaltyProgram, ProgramRecommendation, ProgramType, Service } from '@/types'
+import type { BusinessOnboardingData, LoyaltyProgram, ProgramRecommendation, Service } from '@/types'
+import { DEMO_PROGRAM, DEMO_ONBOARDING_DATA, DEMO_RECOMMENDATION } from '@/data/demoData'
 
 // ---------------------------------------------------------------------------
 // Location state
@@ -19,7 +20,7 @@ interface LocationState {
 }
 
 // ---------------------------------------------------------------------------
-// Typed sub-structures for the new schema
+// Typed sub-structures
 // ---------------------------------------------------------------------------
 
 interface EarnRules {
@@ -32,7 +33,6 @@ interface BonusRule {
   value?: number
   unit?: string
   bonus_credit_cents?: number
-  reward_description?: string
   explanation: string
 }
 
@@ -80,7 +80,18 @@ interface TierProgression {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Format a bonus_rule trigger key into a readable label */
+function formatBonusValue(rule: BonusRule): string {
+  if (!rule.unit) return rule.value != null ? `+${rule.value}` : ''
+  if (rule.unit === 'multiplier') return `${rule.value ?? 2}×`
+  if (rule.unit === 'bonus_points') return `+${rule.value}`
+  if (rule.unit === 'flat_credit') {
+    const cents = rule.bonus_credit_cents ?? (rule.value != null ? rule.value * 100 : 0)
+    return `+$${(cents / 100).toFixed(0)}`
+  }
+  if (rule.unit === 'percent_off_next_purchase') return `${rule.value}% off`
+  return rule.value != null ? String(rule.value) : ''
+}
+
 function formatTrigger(trigger: string): string {
   const map: Record<string, string> = {
     birthday_month: 'Birthday month',
@@ -96,99 +107,78 @@ function formatTrigger(trigger: string): string {
   return map[trigger] ?? trigger.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-/** Format a bonus_rule value into a concise badge label */
-function formatBonusValue(rule: BonusRule): string {
-  if (!rule.unit) return rule.value != null ? `+${rule.value}` : ''
-  if (rule.unit === 'multiplier') return `${rule.value ?? 2}×`
-  if (rule.unit === 'bonus_points') return `+${rule.value} pts`
-  if (rule.unit === 'flat_credit') {
-    const cents = rule.bonus_credit_cents ?? (rule.value != null ? rule.value * 100 : 0)
-    return `+$${(cents / 100).toFixed(0)}`
-  }
-  if (rule.unit === 'percent_off_next_purchase') return `${rule.value}% off`
-  return rule.value != null ? String(rule.value) : ''
-}
-
-/** Hero gradient per program type */
-const PROGRAM_GRADIENTS: Record<ProgramType | 'default', string> = {
-  points: 'from-amber-50 to-orange-100',
-  tiered: 'from-blue-50 to-indigo-100',
-  cashback: 'from-emerald-50 to-teal-100',
-  punch_card: 'from-rose-50 to-pink-100',
-  coalition: 'from-purple-50 to-violet-100',
-  points_tiers: 'from-sky-50 to-cyan-100',
-  default: 'from-zinc-100 to-zinc-200',
-}
-
-/** Large icon per program type for the hero */
-const PROGRAM_HERO_ICONS: Partial<Record<ProgramType, React.ReactNode>> = {
-  points: <Zap className="w-8 h-8 text-amber-500" />,
-  tiered: <TrendingUp className="w-8 h-8 text-indigo-500" />,
-  cashback: <DollarSign className="w-8 h-8 text-emerald-500" />,
-  punch_card: <Star className="w-8 h-8 text-rose-500" />,
-  coalition: <UserPlus className="w-8 h-8 text-violet-500" />,
-  points_tiers: <Award className="w-8 h-8 text-sky-500" />,
-}
-
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
+/** 48×48 icon box matching the Figma spec */
 function IconBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-12 h-12 rounded-[2px] bg-zinc-100 flex items-center justify-center shrink-0 text-zinc-500">
-      {children}
-    </div>
-  )
-}
-
-function CardItem({
-  icon,
-  label,
-  description,
-  badge,
-  alignItems = 'center',
-}: {
-  icon: React.ReactNode
-  label: React.ReactNode
-  description: string
-  badge?: React.ReactNode
-  alignItems?: 'center' | 'start'
-}) {
-  return (
-    <div className={`bg-white border border-zinc-200 rounded-lg flex gap-4 items-${alignItems} p-4`}>
-      <IconBox>{icon}</IconBox>
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <p className="text-[15px] font-medium text-zinc-900 leading-6 flex-1">{label}</p>
-          {badge}
-        </div>
-        <p className="text-sm font-medium text-zinc-500 leading-5">{description}</p>
+    <div className="bg-zinc-100 rounded-[2px] shrink-0 size-12 relative overflow-hidden">
+      <div className="absolute left-3 top-3 size-6 text-zinc-600 flex items-center justify-center">
+        {children}
       </div>
     </div>
   )
 }
 
-function TierBadge({ rank, label }: { rank: number; label: string }) {
-  const styles = [
-    'bg-zinc-100 text-zinc-700',
-    'bg-blue-50 text-blue-900',
-    'bg-green-50 text-green-900',
-  ]
-  const cls = styles[rank - 1] ?? styles[0]
+/** Standard row card: icon box + title (+ optional badge) + description */
+function RowCard({
+  icon,
+  title,
+  description,
+  badge,
+}: {
+  icon: React.ReactNode
+  title: React.ReactNode
+  description?: string
+  badge?: React.ReactNode
+}) {
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg shrink-0 ${cls}`}>{label}</span>
+    <div className="bg-white border border-zinc-200 rounded-lg flex items-start gap-3 p-3">
+      <IconBox>{icon}</IconBox>
+      <div className="flex-1 min-w-0 flex flex-col gap-1 py-0.5">
+        <div className="flex items-center gap-2">
+          <p className="flex-1 text-[15px] font-medium text-zinc-900 leading-6 min-w-0">{title}</p>
+          {badge}
+        </div>
+        {description && (
+          <p className="text-sm font-medium text-zinc-500 leading-5">{description}</p>
+        )}
+      </div>
+    </div>
   )
 }
 
+/** Section heading with optional subtitle */
 function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="text-[20px] font-semibold text-black leading-6 tracking-[0]">{title}</h2>
+      <h2 className="text-[20px] font-semibold text-zinc-900 leading-[26px]">{title}</h2>
       {subtitle && <p className="text-base text-zinc-600 leading-6">{subtitle}</p>}
     </div>
   )
 }
+
+/** Tier badge with rank-based colour */
+function TierBadge({ rank, label }: { rank: number; label: string }) {
+  const colours = [
+    'bg-zinc-100 text-zinc-700',
+    'bg-blue-50 text-blue-800',
+    'bg-green-50 text-green-800',
+  ]
+  return (
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded shrink-0 ${colours[(rank - 1) % colours.length]}`}>
+      {label}
+    </span>
+  )
+}
+
+const TIER_ICONS = [
+  <Flag className="size-5" />,
+  <Trophy className="size-5" />,
+  <Crown className="size-5" />,
+]
 
 // ---------------------------------------------------------------------------
 // Page
@@ -197,7 +187,13 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle?: string 
 export default function ProgramPreviewPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const state = location.state as LocationState | null
+  const routeState = location.state as LocationState | null
+  // Dev-only fallback so the page can be inspected at /onboarding/preview without routing state
+  const state: LocationState | null = routeState ?? (
+    import.meta.env.DEV
+      ? { onboardingData: { ...DEMO_ONBOARDING_DATA }, recommendation: DEMO_RECOMMENDATION, program: DEMO_PROGRAM }
+      : null
+  )
   const savedRef = useRef(false)
   const [tncOpen, setTncOpen] = useState(false)
 
@@ -218,7 +214,6 @@ export default function ProgramPreviewPage() {
 
   const { program } = state
 
-  // Typed data access
   const earnRules = program.earn_rules as EarnRules
   const bonusRule = program.bonus_rule as BonusRule
   const referralRules = program.referral_rules as ReferralRules
@@ -228,76 +223,59 @@ export default function ProgramPreviewPage() {
   const tierProgression = program.tier_progression_rules as TierProgression | null
   const isTiered = rewardTiers.length > 0
 
-  const heroGradient = PROGRAM_GRADIENTS[program.program_type] ?? PROGRAM_GRADIENTS.default
-  const heroIcon = PROGRAM_HERO_ICONS[program.program_type] ?? <Award className="w-8 h-8 text-zinc-400" />
-
-  // Earn rule earn-rate label
-  const dollarSpendLabel = earnRules?.dollar_spend?.points_per_dollar != null
-    ? `${earnRules.dollar_spend.points_per_dollar} ${program.currency_name} per $1`
-    : earnRules?.dollar_spend?.cashback_percent != null
-      ? `${earnRules.dollar_spend.cashback_percent}% cash back`
-      : 'Spend tracking'
-
-  // Bonus badge
-  const bonusBadge = bonusRule ? formatBonusValue(bonusRule) : null
+  // Earn rule title label (dollar spend card)
+  const dollarSpendTitle =
+    earnRules?.dollar_spend?.points_per_dollar != null
+      ? `${earnRules.dollar_spend.points_per_dollar} ${program.currency_name} per $1`
+      : earnRules?.dollar_spend?.cashback_percent != null
+        ? `${earnRules.dollar_spend.cashback_percent}% cash back per $1`
+        : 'Earn on every dollar'
 
   // Referral reward text
   const referrerAmt = referralRules?.referrer_reward
   const refereeAmt = referralRules?.referee_reward
-  const referralRewardText = referrerAmt != null && refereeAmt != null
-    ? `You earn ${referrerAmt} ${program.currency_name} · friend earns ${refereeAmt}`
-    : referralRules?.referrer_reward_credit_cents != null
-      ? `You earn $${(referralRules.referrer_reward_credit_cents / 100).toFixed(0)}`
-      : 'Both parties rewarded'
+  const referralRewardText =
+    referrerAmt != null && refereeAmt != null
+      ? `You earn ${referrerAmt} ${program.currency_name} · friend earns ${refereeAmt}`
+      : referralRules?.referrer_reward_credit_cents != null
+        ? `You earn $${(referralRules.referrer_reward_credit_cents / 100).toFixed(0)} credit`
+        : 'Both parties rewarded'
 
-  // Expiry is relevant for non-tiered, non-"not applicable" policies
   const showExpiry =
     pointsExpiry?.expires_after_inactivity_days != null &&
-    pointsExpiry.expiry_policy !== 'not applicable'
+    pointsExpiry.expiry_policy !== 'not applicable' &&
+    !!pointsExpiry.explanation
+
+  const bonusValueLabel = bonusRule ? formatBonusValue(bonusRule) : null
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* ── Scrollable body ── */}
-      <div className="flex-1 overflow-y-auto">
 
-        {/* Header */}
-        <div className="bg-white flex h-[76px] items-end justify-center px-4 pb-4 pt-10">
-          <p className="flex-1 text-[30px] font-semibold text-zinc-950 leading-[30px] tracking-[-1px]">
+      {/* ── Fixed header ── */}
+      <div className="bg-white flex h-[120px] items-end justify-center overflow-hidden pb-4 pt-[var(--safe-area-inset-top,0px)]">
+        <div className="flex flex-1 h-9 items-center gap-4 px-4">
+          <p className="flex-1 text-[30px] font-semibold text-zinc-950 leading-[34px] tracking-[-0.5px]">
             Your loyalty program
           </p>
         </div>
+      </div>
 
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-6 px-4 pb-6">
 
-          {/* ── Section 1: Program overview ── */}
+          {/* ── Section 1: Overview ── */}
           <div className="flex flex-col gap-6">
 
-            {/* Hero banner */}
-            <div className={`w-full h-[136px] rounded-sm bg-gradient-to-br ${heroGradient} flex items-center justify-center relative overflow-hidden`}>
-              {/* Subtle dot grid */}
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage: 'radial-gradient(circle, #71717a 1px, transparent 1px)',
-                  backgroundSize: '18px 18px',
-                }}
-              />
-              <div className="relative z-10 flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                  {heroIcon}
-                </div>
-              </div>
-            </div>
+            {/* Hero image placeholder */}
+            <div className="bg-zinc-100 h-[136px] rounded-sm shrink-0 w-full" />
 
             {/* Program name + purpose */}
             <div className="flex flex-col gap-1">
-              <p className="text-[20px] font-semibold text-black leading-6">
+              <p className="text-[20px] font-semibold text-zinc-900 leading-[26px]">
                 {program.program_name}
               </p>
-              {program.program_name_explanation && (
-                <p className="text-xs text-zinc-400 leading-5">{program.program_name_explanation}</p>
-              )}
-              <p className="text-base text-zinc-600 leading-6 mt-1">
+              <p className="text-base text-zinc-600 leading-6">
                 {program.program_purpose}
               </p>
             </div>
@@ -306,59 +284,48 @@ export default function ProgramPreviewPage() {
             <div className="flex flex-col gap-4">
 
               {/* Brand voice */}
-              <CardItem
-                icon={<Volume2 className="w-5 h-5" />}
-                label="Brand voice"
+              <RowCard
+                icon={<Megaphone className="size-5" />}
+                title="Brand voice"
                 description={program.brand_voice_summary}
-                alignItems="start"
               />
 
               {/* Program type */}
-              <CardItem
-                icon={<Award className="w-5 h-5" />}
-                label={PROGRAM_TYPE_LABELS[program.program_type]}
+              <RowCard
+                icon={<Settings2 className="size-5" />}
+                title={PROGRAM_TYPE_LABELS[program.program_type]}
                 description={program.program_type_reason}
-                alignItems="start"
               />
 
               {/* Currency */}
-              <CardItem
-                icon={<Zap className="w-5 h-5" />}
-                label={program.currency_name}
+              <RowCard
+                icon={<Coins className="size-5" />}
+                title={program.currency_name}
                 description={program.currency_name_explanation}
-                alignItems="start"
               />
 
               {/* Earn: dollar spend */}
-              <CardItem
-                icon={<DollarSign className="w-5 h-5" />}
-                label={dollarSpendLabel}
-                description={earnRules?.dollar_spend?.explanation ?? ''}
+              <RowCard
+                icon={<ClipboardCheck className="size-5" />}
+                title={dollarSpendTitle}
+                description={earnRules?.dollar_spend?.explanation}
               />
 
               {/* Earn: rebook on spot */}
-              <CardItem
-                icon={<CalendarCheck className="w-5 h-5" />}
-                label="Rebook on the spot"
-                description={earnRules?.rebook_on_spot?.explanation ?? ''}
-              />
-
-              {/* Redemption */}
-              {redemptionRules?.explanation && (
-                <CardItem
-                  icon={<Gift className="w-5 h-5" />}
-                  label={redemptionRules.redemption_value ?? 'Redemption'}
-                  description={redemptionRules.explanation}
-                  alignItems="start"
+              {earnRules?.rebook_on_spot?.explanation && (
+                <RowCard
+                  icon={<CalendarCheck className="size-5" />}
+                  title="Rebook on the spot"
+                  description={earnRules.rebook_on_spot.explanation}
                 />
               )}
 
-              {/* Points expiry */}
-              {showExpiry && (
-                <CardItem
-                  icon={<Clock className="w-5 h-5" />}
-                  label={`${pointsExpiry.expires_after_inactivity_days}-day activity window`}
-                  description={pointsExpiry.explanation ?? `${program.currency_name} expire after ${pointsExpiry.expires_after_inactivity_days} days of inactivity.`}
+              {/* Redemption */}
+              {redemptionRules?.explanation && (
+                <RowCard
+                  icon={<TicketCheck className="size-5" />}
+                  title={redemptionRules.redemption_value ?? 'Redemption'}
+                  description={redemptionRules.explanation}
                 />
               )}
 
@@ -370,38 +337,32 @@ export default function ProgramPreviewPage() {
             <div className="flex flex-col gap-4">
               <SectionHeading
                 title={`${rewardTiers.length} membership tiers`}
-                subtitle={tierProgression?.explanation ?? [
-                  tierProgression?.starting_tier,
-                  tierProgression?.upgrade_timing,
-                ].filter(Boolean).join(' · ')}
+                subtitle={
+                  tierProgression?.explanation ??
+                  [tierProgression?.starting_tier, tierProgression?.upgrade_timing]
+                    .filter(Boolean)
+                    .join(' · ')
+                }
               />
 
               <div className="flex flex-col gap-4">
-                {rewardTiers.map((tier) => (
-                  <div
+                {rewardTiers.map((tier, i) => (
+                  <RowCard
                     key={tier.tier_rank}
-                    className="bg-white border border-zinc-200 rounded-lg flex gap-4 items-start p-4"
-                  >
-                    <IconBox>
-                      <TrendingUp className="w-5 h-5" />
-                    </IconBox>
-                    <div className="flex-1 min-w-0 flex flex-col gap-1">
-                      <div className="flex items-center gap-2 w-full">
-                        <p className="text-[15px] font-medium text-zinc-900 leading-6 flex-1">{tier.tier_name}</p>
-                        <TierBadge rank={tier.tier_rank} label={tier.qualification_threshold} />
-                      </div>
-                      {(tier.explanation || tier.perks?.length > 0) && (
-                        <p className="text-sm font-medium text-zinc-500 leading-5">
-                          {tier.explanation ?? tier.perks.slice(0, 2).join(' · ')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                    icon={TIER_ICONS[i % TIER_ICONS.length]}
+                    title={tier.tier_name}
+                    description={tier.explanation ?? tier.perks?.slice(0, 2).join(' · ')}
+                    badge={<TierBadge rank={tier.tier_rank} label={tier.qualification_threshold} />}
+                  />
                 ))}
               </div>
 
-              {tierProgression?.downgrade_warning && (
-                <p className="text-base text-zinc-600 leading-6">{tierProgression.downgrade_warning}</p>
+              {(tierProgression?.qualification_period || tierProgression?.downgrade_warning) && (
+                <p className="text-base text-zinc-600 leading-6">
+                  {[tierProgression.qualification_period, tierProgression.downgrade_warning]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
               )}
             </div>
           )}
@@ -409,19 +370,16 @@ export default function ProgramPreviewPage() {
           {/* ── Section 3: Bonus rewards ── */}
           {bonusRule && (
             <div className="flex flex-col gap-4">
-              <SectionHeading
-                title="Bonus rewards"
-                subtitle={bonusRule.explanation}
-              />
+              <SectionHeading title="Bonus rewards" subtitle={bonusRule.explanation} />
               <div className="flex flex-col gap-4">
-                <CardItem
-                  icon={<Star className="w-5 h-5" />}
-                  label={formatTrigger(bonusRule.trigger)}
+                <RowCard
+                  icon={<Gift className="size-5" />}
+                  title={formatTrigger(bonusRule.trigger)}
                   description={bonusRule.explanation}
                   badge={
-                    bonusBadge ? (
-                      <span className="bg-zinc-100 text-zinc-700 text-xs font-semibold px-2 py-0.5 rounded-lg shrink-0">
-                        {bonusBadge}
+                    bonusValueLabel ? (
+                      <span className="bg-zinc-100 text-zinc-700 text-xs font-semibold px-2 py-0.5 rounded shrink-0">
+                        {bonusValueLabel}
                       </span>
                     ) : undefined
                   }
@@ -433,41 +391,44 @@ export default function ProgramPreviewPage() {
           {/* ── Section 4: Referral program ── */}
           {referralRules && (
             <div className="flex flex-col gap-4">
-              <SectionHeading
-                title="Referral program"
-                subtitle={referralRules.explanation}
-              />
-              <div className="flex flex-col gap-4">
-                <div className="bg-white border border-zinc-200 rounded-lg flex flex-col items-center gap-4 p-4">
-                  {/* Overlapping avatar illustration */}
-                  <div className="flex items-center pr-4">
-                    <div className="w-[68px] h-[68px] rounded-full bg-zinc-200 flex items-center justify-center z-10 ring-2 ring-white">
-                      <UserPlus className="w-7 h-7 text-zinc-500" />
-                    </div>
-                    <div className="w-[68px] h-[68px] rounded-full bg-zinc-100 flex items-center justify-center -ml-4 ring-2 ring-white">
-                      <UserPlus className="w-7 h-7 text-zinc-400" />
-                    </div>
+              <SectionHeading title="Referral program" subtitle={referralRules.explanation} />
+              <div className="bg-white border border-zinc-200 rounded-lg flex items-start gap-3 p-3">
+                {/* Overlapping avatar circles */}
+                <div className="flex items-center pr-2 shrink-0">
+                  <div className="size-[52px] rounded-full bg-zinc-200 flex items-center justify-center z-10 ring-2 ring-white">
+                    <Users className="size-5 text-zinc-500" />
                   </div>
-                  <div className="flex flex-col gap-1 items-center w-full">
-                    <p className="text-[15px] font-medium text-zinc-900 leading-6 text-center">Refer a friend</p>
-                    <p className="text-sm font-medium text-zinc-500 leading-5 text-center">{referralRewardText}</p>
+                  <div className="size-[52px] rounded-full bg-zinc-300 flex items-center justify-center -ml-3 ring-2 ring-white">
+                    <Users className="size-5 text-zinc-400" />
                   </div>
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-1 py-0.5">
+                  <p className="text-[15px] font-medium text-zinc-900 leading-6">Refer a friend</p>
+                  <p className="text-sm font-medium text-zinc-500 leading-5">{referralRewardText}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── T&C link / expandable ── */}
+          {/* ── Points expiry compact section ── */}
+          {showExpiry && (
+            <div className="flex flex-col gap-1">
+              <p className="text-[20px] font-semibold text-zinc-900 leading-[26px]">Points expiry</p>
+              <p className="text-sm font-medium text-zinc-500 leading-5">{pointsExpiry.explanation}</p>
+            </div>
+          )}
+
+          {/* ── T&C ── */}
           <div className="flex flex-col">
             <button
               onClick={() => setTncOpen(v => !v)}
-              className="flex items-center gap-1 text-sm font-medium text-zinc-900 py-2"
+              className="flex items-center gap-1 px-0 py-2 text-sm font-medium text-zinc-900 min-h-9"
             >
               Read program T&C
-              {tncOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {tncOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
             {tncOpen && program.terms_and_conditions && (
-              <div className="mt-2 p-4 bg-zinc-50 rounded-lg border border-zinc-100">
+              <div className="mt-1 p-4 bg-zinc-50 rounded-lg border border-zinc-100">
                 <p className="text-xs text-zinc-500 leading-5 whitespace-pre-wrap font-mono">
                   {program.terms_and_conditions}
                 </p>
@@ -478,8 +439,8 @@ export default function ProgramPreviewPage() {
         </div>
       </div>
 
-      {/* ── Pinned action footer ── */}
-      <div className="bg-white px-4 pt-4 pb-6 flex flex-col gap-2 shrink-0">
+      {/* ── Pinned footer ── */}
+      <div className="bg-white px-4 pt-3 pb-6 flex flex-col gap-2 shrink-0">
         <button
           onClick={() => navigate('/dashboard')}
           className="w-full h-10 rounded-lg bg-zinc-900 text-white text-sm font-medium"
@@ -493,6 +454,7 @@ export default function ProgramPreviewPage() {
           Start over
         </button>
       </div>
+
     </div>
   )
 }
