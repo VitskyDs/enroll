@@ -66,6 +66,7 @@ export async function saveToSupabase(
       points_expiry_rules: program.points_expiry_rules,
       bonus_rules: program.bonus_rules,
       referral_description: program.referral_description,
+      program_purpose: program.program_purpose,
       brand_voice_summary: program.brand_voice_summary,
       llm_customization_hints: program.llm_customization_hints,
       terms_and_conditions: program.terms_and_conditions,

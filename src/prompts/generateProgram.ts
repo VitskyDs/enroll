@@ -106,6 +106,8 @@ For cashback: KEEP (365 days). For tiered: KEEP (n/a).
 
 **referral_description**: REWRITE in plain language using new currency name and brand voice. Use tone and customer_relationship_model to calibrate.
 
+**program_purpose**: WRITE 2–3 plain-language sentences explaining to the business owner why this specific program type was chosen for their business. Reference their specific industry, offering type, stated goal, and visit/spend patterns. This is owner-facing — not marketing copy, not tone description. It should answer: "Why does this program make sense for us?" Example: "A points-based program suits your business because your customers visit frequently and spend consistently. Flat points reward every visit without complex tier tracking, and the welcome and birthday bonuses give you quick wins for new and returning members."
+
 **brand_voice_summary**: REWRITE to reflect this business's identity. 2-3 sentences. Describe tone, relationship the program should communicate, one concrete example notification.
 
 **llm_customization_hints**: INCLUDE UNCHANGED from archetype.
@@ -125,7 +127,7 @@ Before outputting, verify:
 
 Output the completed program as a single JSON object. Omit id, created_at, business_id — these are auto-generated.
 
-The JSON must include ALL of these fields: program_type, industry, program_name, currency_name, earn_rules, redemption_rules, reward_tiers, tier_progression_rules, points_expiry_rules, bonus_rules, referral_description, brand_voice_summary, llm_customization_hints, terms_and_conditions.
+The JSON must include ALL of these fields: program_type, industry, program_name, currency_name, earn_rules, redemption_rules, reward_tiers, tier_progression_rules, points_expiry_rules, bonus_rules, referral_description, program_purpose, brand_voice_summary, llm_customization_hints, terms_and_conditions.
 
 Output ONLY the JSON object — no markdown, no code fences, no explanation.`
 }

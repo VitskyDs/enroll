@@ -235,6 +235,34 @@ if `brand_personality` is available:
 
 ---
 
+#### `program_purpose`
+
+**write** 2–3 plain-language sentences for the business owner explaining why this specific program type was chosen for their business.
+
+this field is owner-facing. it is not marketing copy and is not a description of tone. it answers the question: "why does this program make sense for us?"
+
+write it after you have completed all other fields — draw on the actual inputs: their industry, offering type, primary goal, visit frequency, and spend variance.
+
+structure it as:
+- sentence 1: state which program type was chosen and the primary reason tied to their goal or behavior pattern
+- sentence 2: explain why this type fits their visit/spend pattern or industry context
+- sentence 3 (optional): note any bonus mechanics or structural benefits that suit them specifically
+
+**never** reference the LLM, archetypes, or internal decision logic. write as if a human strategist is explaining the choice.
+
+examples by program type:
+
+**points:**
+> "A points-based program suits your business because your customers visit frequently and spend consistently. Flat points reward every visit without complex tier tracking, and the welcome and birthday bonuses give you quick wins for new and returning members."
+
+**tiered:**
+> "A tiered program makes sense for your business because your customers vary significantly in how much they spend. Tiers let you recognize and retain your highest-value clients with meaningful perks while still rewarding casual visitors at the entry level. The spend-based structure also encourages customers to increase their visits to reach the next tier."
+
+**cashback:**
+> "A cashback program works well for your business because your customers are value-conscious and visit infrequently. Immediate, tangible cashback gives new customers a clear reason to return without asking them to accumulate points over a long period. It's also easy to communicate — customers always know exactly what they're getting."
+
+---
+
 #### `referral_description`
 
 **rewrite** in plain language using the business's currency name and brand voice.
@@ -327,6 +355,7 @@ output the completed program as a single JSON object that matches the Supabase r
   "points_expiry_rules": { ... },
   "bonus_rules": [ ... ],
   "referral_description": "...",
+  "program_purpose": "...",
   "brand_voice_summary": "...",
   "llm_customization_hints": { ... },
   "terms_and_conditions": "..."
@@ -364,6 +393,7 @@ include `llm_customization_hints` in the output unchanged — it should be store
 | `points_expiry_rules`    | adjust by goal                    | keep (n/a)                        | keep (365 days)                   |
 | `bonus_rules` amounts    | adjust by goal                    | adjust by goal                    | adjust by goal                    |
 | `referral_description`   | rewrite (tone + rel. model)       | rewrite (tone + rel. model)       | rewrite (tone + rel. model)       |
+| `program_purpose`        | write (owner-facing rationale)    | write (owner-facing rationale)    | write (owner-facing rationale)    |
 | `brand_voice_summary`    | synthesize from personality       | synthesize from personality       | synthesize from personality       |
 | `reward_tiers` perks     | n/a                               | calibrate to price_positioning    | n/a                               |
 | `terms_and_conditions`   | fill placeholders                 | fill placeholders                 | fill placeholders                 |

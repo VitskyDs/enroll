@@ -95,6 +95,7 @@ export interface LoyaltyProgram {
   points_expiry_rules: Record<string, any>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bonus_rules: Record<string, any>[]
+  program_purpose: string
   referral_description: string
   brand_voice_summary: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
