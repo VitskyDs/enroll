@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Megaphone, Settings2, Coins, ClipboardCheck, CalendarCheck, TicketCheck,
-  Gift, Flag, Trophy, Crown, Users, ChevronDown, ChevronUp,
+  Megaphone, Settings2, ClipboardCheck, CalendarCheck, TicketCheck,
+  Gift, Flag, Trophy, Crown, Users, ChevronRight,
 } from 'lucide-react'
 import { saveToSupabase } from '@/services/saveToSupabase'
 import { PROGRAM_TYPE_LABELS } from '@/services/recommendProgram'
@@ -156,12 +156,7 @@ function RowCard({
           {badge}
         </div>
         {customerText && (
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 leading-4 mb-0.5">
-              For customers
-            </p>
-            <p className="text-sm font-medium text-zinc-500 leading-5">{customerText}</p>
-          </div>
+          <p className="text-sm font-medium text-zinc-500 leading-5">{customerText}</p>
         )}
       </div>
     </div>
@@ -213,7 +208,6 @@ export default function ProgramPreviewPage() {
       : null
   )
   const savedRef = useRef(false)
-  const [tncOpen, setTncOpen] = useState(false)
 
   useEffect(() => {
     if (!state || savedRef.current) return
@@ -375,13 +369,6 @@ export default function ProgramPreviewPage() {
                 customerText={program.program_type_reason}
               />
 
-              {/* Currency */}
-              <RowCard
-                icon={<Coins className="size-5" />}
-                title={program.currency_name}
-                customerText={program.currency_name_explanation}
-              />
-
               {/* Earn: dollar spend */}
               <RowCard
                 icon={<ClipboardCheck className="size-5" />}
@@ -483,12 +470,7 @@ export default function ProgramPreviewPage() {
                   <p className="text-[15px] font-medium text-zinc-900 leading-6">
                     {referralOwnerText ?? 'Refer a friend'}
                   </p>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 leading-4 mb-0.5">
-                      For customers
-                    </p>
-                    <p className="text-sm font-medium text-zinc-500 leading-5">{referralCustomerText}</p>
-                  </div>
+                  <p className="text-sm font-medium text-zinc-500 leading-5">{referralCustomerText}</p>
                 </div>
               </div>
             </div>
@@ -505,22 +487,15 @@ export default function ProgramPreviewPage() {
           )}
 
           {/* ── T&C ── */}
-          <div className="flex flex-col">
+          {program.terms_and_conditions && (
             <button
-              onClick={() => setTncOpen(v => !v)}
+              onClick={() => navigate('/onboarding/tnc', { state: { terms: program.terms_and_conditions } })}
               className="flex items-center gap-1 px-0 py-2 text-sm font-medium text-zinc-900 min-h-9"
             >
-              Read program T&C
-              {tncOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              Read program T&amp;C
+              <ChevronRight className="size-4" />
             </button>
-            {tncOpen && program.terms_and_conditions && (
-              <div className="mt-1 p-4 bg-zinc-50 rounded-lg border border-zinc-100">
-                <p className="text-xs text-zinc-500 leading-5 whitespace-pre-wrap font-mono">
-                  {program.terms_and_conditions}
-                </p>
-              </div>
-            )}
-          </div>
+          )}
 
         </div>
       </div>
