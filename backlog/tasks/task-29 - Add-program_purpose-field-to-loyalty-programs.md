@@ -1,7 +1,7 @@
 ---
 id: TASK-29
 title: Add program_purpose field to loyalty programs
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-14 07:13'
 updated_date: '2026-03-14 07:17'
