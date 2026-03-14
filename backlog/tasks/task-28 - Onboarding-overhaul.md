@@ -4,10 +4,11 @@ title: Onboarding overhaul
 status: Done
 assignee: []
 created_date: '2026-03-13 15:13'
-updated_date: '2026-03-14 06:19'
+updated_date: '2026-03-14 06:22'
 labels: []
 dependencies: []
 priority: high
+ordinal: 19000
 ---
 
 ## Description

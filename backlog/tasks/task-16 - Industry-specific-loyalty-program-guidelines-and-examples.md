@@ -1,10 +1,10 @@
 ---
 id: TASK-16
 title: Industry-specific loyalty program guidelines and examples
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-05 20:50'
-updated_date: '2026-03-07 05:01'
+updated_date: '2026-03-14 06:22'
 labels: []
 milestone: m-0
 dependencies: []
@@ -18,7 +18,7 @@ references:
   - src/lib/validateProgram.ts
   - src/types/index.ts
 priority: high
-ordinal: 10000
+ordinal: 20000
 ---
 
 ## Description

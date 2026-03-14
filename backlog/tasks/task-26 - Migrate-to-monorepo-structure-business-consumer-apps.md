@@ -1,15 +1,17 @@
 ---
 id: TASK-26
 title: Migrate to monorepo structure (business + consumer apps)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-10 19:35'
+updated_date: '2026-03-14 19:00'
 labels:
   - architecture
   - infrastructure
 milestone: m-3
 dependencies: []
 priority: medium
+ordinal: 1000
 ---
 
 ## Description

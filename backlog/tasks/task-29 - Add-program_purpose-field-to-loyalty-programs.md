@@ -4,7 +4,7 @@ title: Add program_purpose field to loyalty programs
 status: Done
 assignee: []
 created_date: '2026-03-14 07:13'
-updated_date: '2026-03-14 07:17'
+updated_date: '2026-03-14 18:19'
 labels: []
 dependencies: []
 references:
@@ -14,6 +14,7 @@ references:
   - src/services/saveToSupabase.ts
   - onboarding-docs/loyalty program generation instruction.md
 priority: medium
+ordinal: 21000
 ---
 
 ## Description
