@@ -9,20 +9,31 @@ type FeatureKey = 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'referral' | '
 
 function shortDescription(program: LoyaltyProgram, key: FeatureKey): string {
   switch (key) {
-    case 'earn-rules':
-      return program.earn_rules?.base_rate ?? 'View earn rules'
+    case 'earn-rules': {
+      const pts = program.earn_rules?.dollar_spend?.points_per_dollar
+      const pct = program.earn_rules?.dollar_spend?.cashback_percent
+      if (pts != null) return `${pts} ${program.currency_name} per $1 spent`
+      if (pct != null) return `${pct}% cash back on every dollar`
+      return 'View earn rules'
+    }
     case 'reward-tiers':
       return Array.isArray(program.reward_tiers) && program.reward_tiers.length > 0
         ? `${program.reward_tiers.length} tiers`
         : 'No tiers'
-    case 'bonus-rules':
-      return Array.isArray(program.bonus_rules)
-        ? `${program.bonus_rules.length} bonus rules`
-        : 'View bonus rules'
-    case 'referral':
-      return program.referral_description
-        ? program.referral_description.slice(0, 60) + '…'
-        : 'View referral program'
+    case 'bonus-rules': {
+      const rule = program.bonus_rule
+      if (!rule) return 'View bonus rule'
+      const trigger = (rule.trigger as string | undefined) ?? ''
+      const label = trigger.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      return label || 'View bonus rule'
+    }
+    case 'referral': {
+      const ref = program.referral_rules as Record<string, unknown> | undefined
+      const r = ref?.referrer_reward
+      const e = ref?.referee_reward
+      if (r != null && e != null) return `+${r} / +${e} ${program.currency_name}`
+      return 'View referral program'
+    }
     case 'brand-voice':
       return program.brand_voice_summary
         ? program.brand_voice_summary.slice(0, 60) + '…'
