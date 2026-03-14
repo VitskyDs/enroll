@@ -19,10 +19,8 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@enroll/shared": ["../../packages/shared/src/index.ts"],
-      "@enroll/shared/*": ["../../packages/shared/src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "../../packages/shared/src"]
+  "include": ["src"]
 }
