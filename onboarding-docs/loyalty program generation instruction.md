@@ -112,6 +112,14 @@ field-by-field rules follow.
 
 ---
 
+#### `program_type_reason`
+
+**write.** 2–3 plain-language sentences explaining to the business owner why this program type was chosen. reference `primary_goal`, `visit_frequency`, and `spend_variance`. owner-facing — answers "why does this program make sense for us?"
+
+never reference the LLM, archetypes, or internal decision logic. write as if a human strategist is explaining the choice.
+
+---
+
 #### `industry`
 
 **substitute.** replace the archetype's example industry with the actual business industry from the onboarding profile.
@@ -136,6 +144,12 @@ if `brand_personality` is available:
 
 ---
 
+#### `program_name_explanation`
+
+**write.** 1–2 sentences explaining what the program name is and why it was chosen. customer-facing — should make the name feel intentional and on-brand, not arbitrary.
+
+---
+
 #### `currency_name`
 
 **rewrite** (points programs only). rename the archetype's placeholder currency to something on-brand.
@@ -154,17 +168,31 @@ if `brand_personality` is available:
 
 ---
 
+#### `currency_name_explanation`
+
+**write.** 1–2 sentences defining what the currency is and how it is earned, in plain language. both business and customer facing.
+
+example: "Blooms are the points you earn at [Business Name]. You earn 1 Bloom for every dollar you spend on any service."
+
+update the currency name and earn rate to match the actual values in `earn_rules.dollar_spend`.
+
+---
+
 #### `earn_rules`
 
-**adjust** the rates and **substitute** the qualifying actions to match the business.
+**earn_rules has exactly two keys: `dollar_spend` and `rebook_on_spot`. never add or remove mechanisms.**
 
-- keep `base_rate` structure identical; only change the number if margin data or industry hints suggest it
-- replace `qualifying_actions` with actions that make sense for this business's offering type:
-  - a service business (e.g. salon) earns on appointments, not product purchases
-  - a gym earns on class check-ins, monthly membership, personal training sessions
-  - a café earns on drinks, beans, and merchandise
-- keep the welcome bonus and birthday bonus mechanics — only rename them to fit the currency name
-- do not add qualifying actions not present in the archetype unless `llm_customization_hints.vary_by_industry` explicitly suggests one
+**`earn_rules.dollar_spend`** — adjust the rate value and rewrite the explanation:
+- for points programs: adjust `points_per_dollar` based on margin and `llm_customization_hints`
+- for cashback programs: adjust `cashback_percent` based on margin
+- for tiered programs: `spend_tracked: true` (no rate — all spend counts toward tier)
+- rewrite `explanation` in plain language using the actual currency name. example: "Earn 1 Bloom for every dollar you spend on any service."
+
+**`earn_rules.rebook_on_spot`** — adjust the bonus value and rewrite the explanation:
+- for points programs: adjust `bonus_points` based on `primary_goal` (higher for `retain` and `revenue`)
+- for cashback programs: adjust `bonus_credit_cents`
+- for tiered programs: adjust `spend_credit_multiplier` (e.g. 1.25 means rebooking on the spot makes spend count 1.25× toward tier)
+- rewrite `explanation` using the actual currency name and what "rebooking" means for this business (next appointment, next class, next session, etc.)
 
 ---
 
@@ -175,6 +203,7 @@ if `brand_personality` is available:
 - substitute the currency name throughout
 - for tiered programs, keep the "automatic / no manual redemption" mechanic — do not convert it to a points redemption
 - do not change `partial_redemption_allowed` — keep it true
+- **rewrite `redemption_rules.explanation`** in plain language using the actual currency name and redemption value. example: "Once you have 100 Blooms, you can redeem them for $5 off any service."
 
 ---
 
@@ -189,6 +218,7 @@ if `brand_personality` is available:
   - a service business offers free sessions, priority booking, complimentary add-ons
   - do not include perks the business cannot deliver (e.g. "personal stylist" for a car wash)
 - `tier_rank` values and structure: keep fixed
+- **add an `explanation` field to each tier object** in plain language describing who it is for and what reaching it means. example: "Insider unlocks once you spend $500 in a rolling 12-month period. You keep this tier as long as you maintain that spend level."
 
 if `brand_personality` is available:
 
@@ -207,6 +237,7 @@ if `brand_personality` is available:
 - do not change the 90-day grace period
 - do not change upgrade timing logic (immediate on threshold crossing)
 - do not change downgrade policy (one tier down, not to bottom)
+- **rewrite `tier_progression_rules.explanation`** in plain language. explain how upgrades happen, how downgrades work, and the grace period. customer-facing.
 
 ---
 
@@ -219,19 +250,21 @@ if `brand_personality` is available:
 - `acquire` goal: keep at 180 days to reduce friction for new members
   **not applicable** for tiered — keep the archetype's "not applicable" value.
 
+**rewrite `points_expiry_rules.explanation`** in plain language using the actual currency name and inactivity period. example: "Your Blooms are valid as long as you make at least one qualifying visit every 180 days. We'll remind you 30 days before any points are set to expire."
+
 ---
 
-#### `bonus_rules`
+#### `bonus_rule`
 
-**adjust** amounts and **rewrite** trigger labels to use the new currency name.
+**`bonus_rule` is a single JSON object — not an array.** pick the one bonus trigger that best fits the business's `primary_goal` and industry context:
 
-- keep all trigger types present in the archetype — do not remove any
-- adjust bonus amounts based on `primary_goal`:
-  - `acquire`: increase welcome and referral bonuses; these are acquisition hooks
-  - `retain`: add or strengthen streak/frequency bonuses
-  - `revenue`: add or strengthen spend-threshold bonuses
-- rename trigger descriptions to match the business (e.g. "double_points_day" → "Double Paws Day" for a pet store)
-- do not invent new trigger types not in the archetype
+- `acquire` goal → welcome bonus (`first_purchase` or `first_visit`)
+- `retain` goal → birthday bonus (`birthday_month`) or visit milestone
+- `revenue` goal → spend threshold bonus
+
+**adjust** the bonus value based on margin and program type. **rewrite `bonus_rule.explanation`** in plain language using the actual currency name. example: "Earn double Blooms on any service during your birthday month."
+
+do not output an array. output exactly one object.
 
 ---
 
@@ -263,17 +296,26 @@ examples by program type:
 
 ---
 
-#### `referral_description`
+#### `referral_rules`
 
-**rewrite** in plain language using the business's currency name and brand voice.
+**`referral_rules` is a structured JSON object** — not a plain text string. keep all keys present in the archetype. adjust reward values and rewrite `referral_rules.explanation`.
 
-- keep the same mechanic (both parties rewarded, first purchase required)
-- adjust reward amounts to match any changes made to `bonus_rules`
-- write in second person ("share your link…"), conversational tone
+structure:
+```json
+{
+  "referrer_reward": 100,
+  "referee_reward": 50,
+  "trigger": "referee_first_visit",
+  "explanation": "..."
+}
+```
 
-if `brand_personality` is available:
+- **adjust reward amounts** based on `primary_goal` (`acquire` → increase both rewards; `retain`/`revenue` → use archetype defaults)
+- **keep the trigger** (`referee_first_purchase` or `referee_first_visit`) — do not change the mechanic
+- **rewrite `referral_rules.explanation`** in plain language in second person ("share your link…"). use the actual currency name and reward amounts.
 
-- use `tone` to set formality: playful/irreverent → casual and punchy; warm/community → inviting and personal; premium → polished and restrained
+if `brand_personality` is available, calibrate the explanation's register:
+- use `tone`: playful/irreverent → casual and punchy; warm/community → inviting and personal; premium → polished and restrained
 - use `customer_relationship_model` to frame the ask:
   - transactional: "share your code. you get [X], they get [X]." — direct, no sentiment
   - community: "know someone who'd love it here? bring them in — you'll both be rewarded."
@@ -330,11 +372,14 @@ do not rewrite the legal prose. do not change section structure. do not add or r
 
 before outputting the final program, verify:
 
-1. **currency name is consistent** across `currency_name`, `earn_rules`, `redemption_rules`, `bonus_rules`, `referral_description`, and `terms_and_conditions` — it should be identical everywhere
+1. **currency name is consistent** across `currency_name`, `currency_name_explanation`, `earn_rules`, `redemption_rules`, `bonus_rule`, `referral_rules`, and `terms_and_conditions` — it should be identical everywhere it appears
 2. **program name is consistent** across `program_name` and `terms_and_conditions`
 3. **tier names are consistent** across `reward_tiers`, `tier_progression_rules`, and `terms_and_conditions` (tiered only)
-4. **numbers match** — every rate, threshold, and bonus amount in `terms_and_conditions` matches the corresponding value in `earn_rules`, `redemption_rules`, `bonus_rules`, and `points_expiry_rules`
+4. **numbers match** — every rate, threshold, and bonus amount in `terms_and_conditions` matches the corresponding value in `earn_rules`, `redemption_rules`, `bonus_rule`, and `points_expiry_rules`
 5. **no placeholder brackets remain** in any field except `[DATE]`, `[State/Jurisdiction]`, `[Address]`, `[Email]`, and `[Phone]`
+6. **earn_rules has exactly two keys** — `dollar_spend` and `rebook_on_spot` — no more, no fewer
+7. **bonus_rule is a single object** — not an array
+8. **every JSON field has an `explanation` key** — `earn_rules.dollar_spend`, `earn_rules.rebook_on_spot`, `redemption_rules`, `points_expiry_rules`, `bonus_rule`, `referral_rules`, each object in `reward_tiers` (tiered only), and `tier_progression_rules` (tiered only)
 
 ---
 
@@ -345,17 +390,23 @@ output the completed program as a single JSON object that matches the Supabase r
 ```json
 {
   "program_type": "...",
+  "program_type_reason": "...",
   "industry": "...",
   "program_name": "...",
+  "program_name_explanation": "...",
   "currency_name": "...",
-  "earn_rules": { ... },
-  "redemption_rules": { ... },
+  "currency_name_explanation": "...",
+  "earn_rules": {
+    "dollar_spend": { "points_per_dollar": 1, "explanation": "..." },
+    "rebook_on_spot": { "bonus_points": 50, "explanation": "..." }
+  },
+  "redemption_rules": { ..., "explanation": "..." },
   "reward_tiers": null,
   "tier_progression_rules": null,
-  "points_expiry_rules": { ... },
-  "bonus_rules": [ ... ],
-  "referral_description": "...",
+  "points_expiry_rules": { ..., "explanation": "..." },
+  "bonus_rule": { "trigger": "...", "value": ..., "unit": "...", "explanation": "..." },
   "program_purpose": "...",
+  "referral_rules": { "referrer_reward": ..., "referee_reward": ..., "trigger": "...", "explanation": "..." },
   "brand_voice_summary": "...",
   "llm_customization_hints": { ... },
   "terms_and_conditions": "..."
@@ -380,20 +431,23 @@ include `llm_customization_hints` in the output unchanged — it should be store
 
 ## quick reference — what changes by program type
 
-| field                    | points                            | tiered                            | cashback                          |
-| ------------------------ | --------------------------------- | --------------------------------- | --------------------------------- |
-| `brand_personality`      | apply in step 3 before all fields | apply in step 3 before all fields | apply in step 3 before all fields |
-| `program_name`           | rewrite                           | rewrite                           | rewrite                           |
-| `currency_name`          | rewrite                           | keep (spend-based)                | keep ($ value)                    |
-| `earn_rules` rates       | adjust                            | keep (spend-tracking)             | adjust to margin                  |
-| `earn_rules` actions     | substitute                        | substitute                        | substitute                        |
-| `redemption_rules`       | keep structure, sub currency      | keep as automatic                 | keep structure                    |
-| `reward_tiers`           | null — keep null                  | rewrite names + perks             | null — keep null                  |
-| `tier_progression_rules` | null — keep null                  | keep, rename tier 1               | null — keep null                  |
-| `points_expiry_rules`    | adjust by goal                    | keep (n/a)                        | keep (365 days)                   |
-| `bonus_rules` amounts    | adjust by goal                    | adjust by goal                    | adjust by goal                    |
-| `referral_description`   | rewrite (tone + rel. model)       | rewrite (tone + rel. model)       | rewrite (tone + rel. model)       |
-| `program_purpose`        | write (owner-facing rationale)    | write (owner-facing rationale)    | write (owner-facing rationale)    |
-| `brand_voice_summary`    | synthesize from personality       | synthesize from personality       | synthesize from personality       |
-| `reward_tiers` perks     | n/a                               | calibrate to price_positioning    | n/a                               |
-| `terms_and_conditions`   | fill placeholders                 | fill placeholders                 | fill placeholders                 |
+| field                         | points                               | tiered                               | cashback                             |
+| ----------------------------- | ------------------------------------ | ------------------------------------ | ------------------------------------ |
+| `brand_personality`           | apply in step 3 before all fields    | apply in step 3 before all fields    | apply in step 3 before all fields    |
+| `program_type_reason`         | write (owner-facing why)             | write (owner-facing why)             | write (owner-facing why)             |
+| `program_name`                | rewrite                              | rewrite                              | rewrite                              |
+| `program_name_explanation`    | write                                | write                                | write                                |
+| `currency_name`               | rewrite                              | keep (spend-based)                   | keep ($ value)                       |
+| `currency_name_explanation`   | write                                | write                                | write                                |
+| `earn_rules.dollar_spend`     | adjust points_per_dollar             | spend_tracked: true                  | adjust cashback_percent              |
+| `earn_rules.rebook_on_spot`   | adjust bonus_points                  | adjust spend_credit_multiplier       | adjust bonus_credit_cents            |
+| `redemption_rules`            | keep structure + rewrite explanation | keep as automatic + rewrite exp.     | keep structure + rewrite explanation |
+| `reward_tiers`                | null — keep null                     | rewrite names + perks + explanation  | null — keep null                     |
+| `tier_progression_rules`      | null — keep null                     | keep, rename tier 1 + rewrite exp.   | null — keep null                     |
+| `points_expiry_rules`         | adjust by goal + rewrite explanation | keep (n/a) + rewrite explanation     | keep (365 days) + rewrite explanation |
+| `bonus_rule`                  | single object, adjust by goal        | single object, adjust by goal        | single object, adjust by goal        |
+| `program_purpose`             | write (owner-facing rationale)       | write (owner-facing rationale)       | write (owner-facing rationale)       |
+| `referral_rules`              | adjust values + rewrite explanation  | adjust values + rewrite explanation  | adjust values + rewrite explanation  |
+| `brand_voice_summary`         | synthesize from personality          | synthesize from personality          | synthesize from personality          |
+| `reward_tiers` perks          | n/a                                  | calibrate to price_positioning       | n/a                                  |
+| `terms_and_conditions`        | fill placeholders                    | fill placeholders                    | fill placeholders                    |

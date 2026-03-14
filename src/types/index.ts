@@ -80,9 +80,12 @@ export interface LoyaltyProgram {
   id: string
   business_id: string
   program_type: ProgramType
+  program_type_reason: string
   industry: string
   program_name: string
+  program_name_explanation: string
   currency_name: string
+  currency_name_explanation: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   earn_rules: Record<string, any>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,9 +97,10 @@ export interface LoyaltyProgram {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   points_expiry_rules: Record<string, any>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bonus_rules: Record<string, any>[]
+  bonus_rule: Record<string, any>
   program_purpose: string
-  referral_description: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  referral_rules: Record<string, any>
   brand_voice_summary: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   llm_customization_hints: Record<string, any>

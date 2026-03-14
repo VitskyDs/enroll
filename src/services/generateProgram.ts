@@ -32,7 +32,7 @@ async function runGeneration(prompt: string): Promise<LoyaltyProgram> {
   const p = parsed as Record<string, unknown>
 
   // Basic required field check
-  const required = ['program_type', 'program_name', 'currency_name', 'earn_rules', 'redemption_rules', 'bonus_rules', 'referral_description', 'program_purpose', 'brand_voice_summary', 'terms_and_conditions']
+  const required = ['program_type', 'program_type_reason', 'program_name', 'program_name_explanation', 'currency_name', 'currency_name_explanation', 'earn_rules', 'redemption_rules', 'bonus_rule', 'program_purpose', 'referral_rules', 'brand_voice_summary', 'terms_and_conditions']
   for (const field of required) {
     if (p[field] === undefined) {
       throw new Error(`Missing required field: ${field}`)
