@@ -323,18 +323,16 @@ export default function ProgramPreviewPage() {
   return (
     <div className="flex flex-col h-screen bg-white">
 
-      {/* ── Fixed header ── */}
-      <div className="bg-white flex h-[120px] items-end justify-center overflow-hidden pb-4 pt-[var(--safe-area-inset-top,0px)]">
-        <div className="flex flex-1 h-9 items-center gap-4 px-4">
-          <p className="flex-1 text-[30px] font-semibold text-zinc-950 leading-[34px] tracking-[-0.5px]">
-            Your loyalty program
-          </p>
-        </div>
-      </div>
-
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-6 px-4 pb-6">
+
+          {/* ── Header ── */}
+          <div className="flex h-[120px] items-end pb-4 pt-[var(--safe-area-inset-top,0px)]">
+            <p className="flex-1 text-[30px] font-semibold text-zinc-950 leading-[34px] tracking-[-0.5px]">
+              Your loyalty program
+            </p>
+          </div>
 
           {/* ── Section 1: Overview ── */}
           <div className="flex flex-col gap-6">
