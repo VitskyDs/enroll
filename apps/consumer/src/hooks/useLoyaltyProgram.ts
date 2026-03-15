@@ -9,6 +9,7 @@ export interface ConsumerLoyaltyProgram {
   program_name: string
   currency_name: string
   referral_rules: Record<string, unknown>
+  earn_rules: Record<string, unknown>
 }
 
 interface UseLoyaltyProgramResult {
@@ -36,7 +37,7 @@ export function useLoyaltyProgram(businessId?: string): UseLoyaltyProgramResult 
 
       let query = supabase
         .from('loyalty_programs')
-        .select('id, business_id, program_type, program_name, currency_name, referral_rules')
+        .select('id, business_id, program_type, program_name, currency_name, referral_rules, earn_rules')
         // Prefer programs with referral_rules populated, then newest first
         .order('referral_rules', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
