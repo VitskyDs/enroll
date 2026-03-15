@@ -1,7 +1,7 @@
 ---
 id: TASK-30
 title: 'Consumer app — routing setup, shadcn theme, and Refer screen'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-15 10:48'
 updated_date: '2026-03-15 10:49'
