@@ -119,7 +119,7 @@ export default function ReferPage() {
                 </div>
               ))}
               {/* Check circle — z-[4] ensures it sits on top of all photos */}
-              <div className="w-[88px] h-[88px] rounded-full bg-[#171717] -mr-4 shrink-0 flex items-center justify-center border-2 border-[#fafafa] z-[4] relative">
+              <div className="w-[80px] h-[80px] rounded-full bg-[#171717] -mr-4 shrink-0 flex items-center justify-center border-2 border-[#fafafa] z-[4] relative">
                 <Check size={28} className="text-white" strokeWidth={2.5} />
               </div>
             </div>
