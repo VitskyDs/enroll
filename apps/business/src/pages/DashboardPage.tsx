@@ -27,7 +27,10 @@ export default function DashboardPage() {
       .single()
       .then(({ data }) => {
         if (data?.name) setBusinessName(data.name)
-        if (data?.slug) setInviteUrl(`${window.location.origin}/join/${data.slug}`)
+        if (data?.slug) {
+          const consumerBase = import.meta.env.VITE_CONSUMER_URL ?? window.location.origin
+          setInviteUrl(`${consumerBase}/join/${data.slug}`)
+        }
       })
   }, [])
 
