@@ -74,7 +74,7 @@ function ServiceCard({ service, onClick }: ServiceCardProps) {
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onClick() }}
-          className="relative z-10 bg-[#f5f5f5] rounded-full size-9 flex items-center justify-center"
+          className="relative z-10 bg-white/80 rounded-full size-9 flex items-center justify-center"
         >
           <Plus size={16} className="text-[#0a0a0a]" />
         </button>
@@ -102,6 +102,25 @@ export default function DashboardPage() {
   const [selectedService, setSelectedService] = useState<ConsumerService | null>(null)
   const [showEnrollmentDrawer, setShowEnrollmentDrawer] = useState(false)
   const [enrolledCustomer, setEnrolledCustomer] = useState<EnrolledCustomer | null>(null)
+
+  const isEnrolled = enrolledCustomer !== null
+
+  // Check if user is already signed in + enrolled on mount
+  useEffect(() => {
+    const resolvedBusinessId = businessId ?? business?.id
+    if (!resolvedBusinessId) return
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) return
+      const { data } = await supabase
+        .from('customers')
+        .select('id, points')
+        .eq('user_id', session.user.id)
+        .eq('business_id', resolvedBusinessId)
+        .maybeSingle()
+      if (data) setEnrolledCustomer(data as EnrolledCustomer)
+    })
+  }, [businessId, business?.id])
 
   // Detect Google OAuth redirect and handle enrollment
   useEffect(() => {
@@ -166,7 +185,6 @@ export default function DashboardPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rules = (program?.referral_rules ?? {}) as Record<string, any>
   const refereeReward = program ? formatRefereeReward(rules, currencyName) : null
-  const enrollCaption = refereeReward ? `Free. ${refereeReward} on join.` : 'Free to join.'
   const bannerTitle = program
     ? `Join ${program.program_name} and get rewarded`
     : 'Earn rewards on every visit'
@@ -183,15 +201,30 @@ export default function DashboardPage() {
         {/* ── Header — cover image + logo ──────────────────────────── */}
         <div className="relative pb-[28px] px-4 pt-[64px]">
           {/* Cover image */}
-          <div className="relative bg-[#f5f5f5] rounded-lg h-[165px] w-full overflow-hidden">
+          <div className="relative rounded-lg h-[165px] w-full overflow-hidden bg-[#f5f5f5]">
+            {business?.cover_image_url && (
+              <img
+                src={business.cover_image_url}
+                alt={business.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
             {/* Gallery pill */}
-            <button className="absolute bottom-3 right-3 bg-[#f5f5f5] rounded-lg flex items-center gap-1.5 px-2 py-1">
+            <button className="absolute bottom-3 right-3 z-10 bg-[#f5f5f5] rounded-lg flex items-center gap-1.5 px-2 py-1">
               <Images size={12} className="text-[#171717]" />
               <span className="text-xs font-medium text-[#171717]">Gallery</span>
             </button>
           </div>
           {/* Logo circle — overlaps cover */}
-          <div className="absolute bottom-0 left-8 size-[64px] rounded-full bg-white border border-[#e5e5e5] shadow-sm" />
+          <div className="absolute bottom-0 left-8 size-[64px] rounded-full bg-white border border-[#e5e5e5] shadow-sm overflow-hidden">
+            {business?.logo_url && (
+              <img
+                src={business.logo_url}
+                alt={business.name}
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
         </div>
 
         {/* ── Main content ─────────────────────────────────────────── */}
@@ -218,20 +251,26 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Right: share + enroll */}
+            {/* Right: share icon (always visible) + enroll button (hidden when enrolled) */}
             <div className="flex flex-col gap-1 items-end shrink-0">
               <div className="flex gap-2 items-center">
                 <button className="bg-[#f5f5f5] rounded-full size-8 flex items-center justify-center">
                   <Share2 size={16} className="text-[#171717]" />
                 </button>
-                <button
-                  onClick={handleEnroll}
-                  className="bg-[#171717] text-white text-[14px] font-medium rounded-full px-3 h-8 whitespace-nowrap"
-                >
-                  Enroll
-                </button>
+                {!isEnrolled && (
+                  <button
+                    onClick={handleEnroll}
+                    className="bg-[#171717] text-white text-[14px] font-medium rounded-full px-3 h-8 whitespace-nowrap"
+                  >
+                    Enroll
+                  </button>
+                )}
               </div>
-              <p className="text-[12px] text-[#737373] leading-4">{enrollCaption}</p>
+              {!isEnrolled && (
+                <p className="text-[12px] text-[#737373] leading-4">
+                  {refereeReward ? `Free. ${refereeReward} on join.` : 'Free to join.'}
+                </p>
+              )}
             </div>
           </div>
 
@@ -260,23 +299,25 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Loyalty enrollment banner */}
-          <div className="bg-[#f5f5f5] rounded-2xl flex items-start overflow-hidden">
-            <div className="flex-1 flex flex-col gap-4 p-4">
-              <div className="flex flex-col gap-1">
-                <p className="text-[18px] font-semibold leading-[27px] text-black">{bannerTitle}</p>
-                <p className="text-[14px] text-[#737373] leading-5">{bannerSub}</p>
+          {/* Loyalty enrollment banner — hidden once enrolled */}
+          {!isEnrolled && (
+            <div className="bg-[#f5f5f5] rounded-2xl flex items-start overflow-hidden">
+              <div className="flex-1 flex flex-col gap-4 p-4">
+                <div className="flex flex-col gap-1">
+                  <p className="text-[18px] font-semibold leading-[27px] text-black">{bannerTitle}</p>
+                  <p className="text-[14px] text-[#737373] leading-5">{bannerSub}</p>
+                </div>
+                <button
+                  onClick={handleEnroll}
+                  className="bg-[#171717] text-white text-[14px] font-medium rounded-full px-6 h-10 self-start whitespace-nowrap"
+                >
+                  Enroll now
+                </button>
               </div>
-              <button
-                onClick={handleEnroll}
-                className="bg-[#171717] text-white text-[14px] font-medium rounded-full px-6 h-10 self-start whitespace-nowrap"
-              >
-                Enroll now
-              </button>
+              {/* Decorative image placeholder */}
+              <div className="w-[120px] self-stretch bg-[#e5e5e5] shrink-0" />
             </div>
-            {/* Decorative image placeholder */}
-            <div className="w-[120px] self-stretch bg-[#e5e5e5] shrink-0" />
-          </div>
+          )}
 
           {/* Services section */}
           <div className="flex flex-col gap-4 pb-8">

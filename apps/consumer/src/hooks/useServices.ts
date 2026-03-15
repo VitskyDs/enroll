@@ -43,7 +43,7 @@ export function useServices(businessId?: string): UseServicesResult {
         .from('services')
         .select('id, name, description, price_cents, subscription_price_cents, duration_minutes, image_url')
         .eq('business_id', businessId)
-        .neq('status', 'inactive')
+        .neq('status', 'archived')
         .order('created_at', { ascending: true })
 
       if (cancelled) return

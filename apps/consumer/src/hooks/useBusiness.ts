@@ -9,6 +9,8 @@ export interface ConsumerBusiness {
   hours: string | null
   address: string | null
   website_url: string | null
+  cover_image_url: string | null
+  logo_url: string | null
 }
 
 interface UseBusinessResult {
@@ -36,7 +38,7 @@ export function useBusiness(businessId?: string): UseBusinessResult {
 
       let query = supabase
         .from('businesses')
-        .select('id, name, industry, tagline, hours, address, website_url')
+        .select('id, name, industry, tagline, hours, address, website_url, cover_image_url, logo_url')
         .order('created_at', { ascending: false })
         .limit(1)
 
