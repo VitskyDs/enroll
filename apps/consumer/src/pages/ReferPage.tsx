@@ -1,16 +1,27 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Check, Copy, Share2, Users } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useNavigate } from 'react-router-dom'
+import { Check, Share2, Gift, CircleCheck } from 'lucide-react'
+import AppHeader from '@/components/AppHeader'
+import BottomNav from '@/components/BottomNav'
 import { cn } from '@/lib/utils'
 
-// Placeholder — will be replaced by the authenticated customer's referral code.
-const REFERRAL_CODE = 'MAYA-7X4K'
-const REFERRAL_LINK = `${window.location.origin}/join?ref=${REFERRAL_CODE}`
-const INCENTIVE = 'Give $10 off, get $10 off'
+// Placeholder data — will come from auth context + business config
+const REFERRAL_LINK = `${window.location.origin}/join?ref=username`
+const REWARD = '$10 off'
+const CONDITIONS = [
+  'Your friend must be a new customer and complete their first visit.',
+  'Reward is credited to your account within 48 hours of their visit.',
+]
+
+// Placeholder avatars — real ones will come from referred users' profiles
+const AVATARS = [
+  'https://i.pravatar.cc/176?img=32',
+  'https://i.pravatar.cc/176?img=47',
+  'https://i.pravatar.cc/176?img=16',
+]
 
 export default function ReferPage() {
+  const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
@@ -19,7 +30,7 @@ export default function ReferPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback for browsers that block clipboard without interaction
+      // fallback: browser blocked clipboard
     }
   }
 
@@ -27,12 +38,12 @@ export default function ReferPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join me on Enroll',
-          text: `Use my referral code ${REFERRAL_CODE} to get $10 off your first visit.`,
+          title: 'Join me',
+          text: `Use my link to get ${REWARD} on your first visit.`,
           url: REFERRAL_LINK,
         })
       } catch {
-        // User cancelled or share failed
+        // user cancelled or not supported
       }
     } else {
       handleCopy()
@@ -40,100 +51,125 @@ export default function ReferPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <header className="pt-safe px-4 pb-3 flex items-center gap-3 border-b">
-        <h1 className="text-sm font-semibold">Refer a friend</h1>
-      </header>
+    <div className="flex flex-col h-full bg-white">
+      <AppHeader action={{ label: 'Track referrals', onClick: () => navigate('/refer/track') }} />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6">
-        {/* Incentive banner */}
-        <div className="rounded-2xl bg-primary text-primary-foreground px-5 py-6 text-center">
-          <p className="text-2xl font-bold tracking-tight">{INCENTIVE}</p>
-          <p className="mt-1 text-sm opacity-80">
-            Your friend gets $10 off their first visit. You get $10 credit when they book.
-          </p>
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto">
+        {/* ── Hero card ─────────────────────────────────────────── */}
+        <div className="px-4">
+          <div className="bg-[#f5f5f5] rounded-2xl p-6 flex flex-col gap-6 items-center">
+            {/* Heading + subtitle */}
+            <div className="flex flex-col gap-3 text-center w-full">
+              <h1 className="text-[48px] font-semibold leading-[48px] tracking-[-1.5px] text-black">
+                Invite friends and earn {REWARD}
+              </h1>
+              <p className="text-[18px] font-normal leading-[27px] text-black">
+                Refer to friends and earn {REWARD} for yourself. Your friend gets {REWARD} to spend.
+              </p>
+            </div>
+
+            {/* Overlapping avatars — 3 photos + 1 dark check circle */}
+            <div className="flex items-center justify-center pr-4">
+              {AVATARS.map((src, i) => (
+                <div
+                  key={i}
+                  className="w-[88px] h-[88px] rounded-full border-2 border-[#fafafa] -mr-4 relative shrink-0 overflow-hidden bg-white"
+                >
+                  <img
+                    src={src}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover rounded-full"
+                  />
+                </div>
+              ))}
+              <div className="w-[88px] h-[88px] rounded-full bg-[#171717] -mr-4 shrink-0 flex items-center justify-center border-2 border-[#fafafa]">
+                <Check size={28} className="text-white" strokeWidth={2.5} />
+              </div>
+            </div>
+
+            {/* Share your link */}
+            <div className="flex flex-col gap-2 w-[320px]">
+              <p className="text-sm font-medium text-[#737373]">Share your link</p>
+
+              {/* Share button */}
+              <button
+                onClick={handleShare}
+                className="flex items-center justify-center gap-2 bg-[#171717] text-white rounded-lg h-9 w-full"
+              >
+                <span className="text-sm font-medium">Share</span>
+                <Share2 size={16} />
+              </button>
+
+              {/* URL + copy pill */}
+              <div className="flex items-center gap-3 bg-white border border-[#e5e5e5] rounded-lg px-3 h-10 shadow-[0px_1px_2px_0px_rgba(0,0,0,0)]">
+                <span className="flex-1 text-sm text-[#0a0a0a] truncate">{REFERRAL_LINK}</span>
+                <button
+                  onClick={handleCopy}
+                  className={cn(
+                    'bg-[#171717] text-white text-xs font-medium rounded-full px-2 h-6 whitespace-nowrap transition-opacity',
+                    copied && 'opacity-70',
+                  )}
+                >
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Referral code card */}
-        <Card>
-          <CardContent className="pt-5 pb-4 flex flex-col gap-4">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
-                Your referral code
-              </p>
-              <p className="text-2xl font-mono font-bold tracking-wider">{REFERRAL_CODE}</p>
+        {/* ── Main section ──────────────────────────────────────── */}
+        <div className="flex flex-col gap-6 items-center px-4 py-6">
+          {/* Small overlapping avatars with gift badge */}
+          <div className="relative flex items-center self-center">
+            <div className="flex items-center bg-[#f5f5f5] rounded-full pl-3 pr-7 py-3">
+              {AVATARS.map((src, i) => (
+                <div
+                  key={i}
+                  className="w-[72px] h-[72px] rounded-full border-2 border-[#fafafa] -mr-4 relative shrink-0 overflow-hidden bg-white"
+                >
+                  <img
+                    src={src}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover rounded-full"
+                  />
+                </div>
+              ))}
             </div>
-
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-              <span className="flex-1 text-xs text-muted-foreground truncate">{REFERRAL_LINK}</span>
-              <button
-                onClick={handleCopy}
-                className={cn(
-                  'shrink-0 p-1 rounded transition-colors',
-                  copied ? 'text-green-600' : 'text-muted-foreground hover:text-foreground',
-                )}
-                aria-label="Copy referral link"
-              >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-              </button>
+            {/* Gift badge positioned over the last avatar */}
+            <div className="absolute right-0 -top-1 w-10 h-10 rounded-full bg-[#009689] border-2 border-white flex items-center justify-center">
+              <Gift size={18} className="text-white" />
             </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 gap-2" onClick={handleCopy}>
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Copied' : 'Copy link'}
-              </Button>
-              <Button className="flex-1 gap-2" onClick={handleShare}>
-                <Share2 size={16} />
-                Share
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Track referrals link */}
-        <Link
-          to="/refer/track"
-          className="flex items-center gap-3 rounded-xl border px-4 py-3 hover:bg-muted transition-colors"
-        >
-          <Users size={18} className="text-muted-foreground shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">Track your referrals</p>
-            <p className="text-xs text-muted-foreground">See who joined and your pending credits</p>
           </div>
-        </Link>
 
-        {/* How it works */}
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            How it works
-          </p>
-          {[
-            { step: '1', label: 'Share your code', detail: 'Send your unique link to a friend.' },
-            {
-              step: '2',
-              label: 'Friend books a visit',
-              detail: 'They use your code at checkout.',
-            },
-            {
-              step: '3',
-              label: 'You both get rewarded',
-              detail: '$10 off for them, $10 credit for you.',
-            },
-          ].map(({ step, label, detail }) => (
-            <div key={step} className="flex gap-3 items-start">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                {step}
-              </div>
-              <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-muted-foreground">{detail}</p>
-              </div>
+          {/* Heading + condition/reward line */}
+          <div className="flex flex-col gap-3 text-center w-full">
+            <h2 className="text-[30px] font-semibold leading-[30px] tracking-[-1px] text-black">
+              Invite friends
+            </h2>
+            <p className="text-[18px] font-normal leading-[27px] text-black">
+              Refer a friend to earn {REWARD} when they complete their first visit.
+            </p>
+          </div>
+
+          {/* Important information */}
+          <div className="flex flex-col gap-4 w-full">
+            <h3 className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">
+              Important information
+            </h3>
+            <div className="flex flex-col gap-4">
+              {CONDITIONS.map((condition, i) => (
+                <div key={i} className="flex gap-2 items-start">
+                  <CircleCheck size={24} className="text-[#009689] shrink-0 mt-0.5" />
+                  <p className="text-base font-normal leading-6 text-black">{condition}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   )
 }
