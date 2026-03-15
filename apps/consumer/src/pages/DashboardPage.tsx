@@ -9,6 +9,7 @@ import { formatRefereeReward } from '@/lib/referral'
 import { cn } from '@/lib/utils'
 import EnrollmentDrawer from '@/components/EnrollmentDrawer'
 import ServiceDrawer from '@/components/ServiceDrawer'
+import BottomNav from '@/components/BottomNav'
 
 interface EnrolledCustomer {
   id: string
@@ -320,7 +321,7 @@ export default function DashboardPage() {
           )}
 
           {/* Services section */}
-          <div className="flex flex-col gap-4 pb-8">
+          <div className={cn('flex flex-col gap-4', isEnrolled ? 'pb-28' : 'pb-8')}>
             <div className="flex flex-col gap-1">
               <p className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">Services</p>
               <p className="text-base text-[#737373] leading-6">Subscribe to popular services and save</p>
@@ -367,6 +368,9 @@ export default function DashboardPage() {
           onClose={() => setShowEnrollmentDrawer(false)}
         />
       )}
+
+      {/* ── Consumer navbar — visible once enrolled ───────────────── */}
+      {isEnrolled && <BottomNav />}
     </div>
   )
 }
