@@ -8,6 +8,7 @@ import ReferPage from '@/pages/ReferPage'
 import TrackReferralsPage from '@/pages/TrackReferralsPage'
 import LoyaltyProgramPage from '@/pages/LoyaltyProgramPage'
 import ProfilePage from '@/pages/ProfilePage'
+import JoinPage from '@/pages/JoinPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/refer/track" element={<TrackReferralsPage />} />
       <Route path="/loyalty" element={<LoyaltyProgramPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/join/:slug" element={<JoinPage />} />
     </Routes>
   )
 }
