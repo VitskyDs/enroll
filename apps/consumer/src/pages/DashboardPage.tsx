@@ -351,17 +351,17 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Service drawer ───────────────────────────────────────── */}
-      {selectedService && (
-        <ServiceDrawer
-          service={selectedService}
-          program={program}
-          onClose={() => setSelectedService(null)}
-        />
-      )}
+      <ServiceDrawer
+        open={!!selectedService}
+        service={selectedService}
+        program={program}
+        onClose={() => setSelectedService(null)}
+      />
 
       {/* ── Enrollment confirmation drawer ───────────────────────── */}
-      {showEnrollmentDrawer && business && enrolledCustomer && (
+      {business && enrolledCustomer && (
         <EnrollmentDrawer
+          open={showEnrollmentDrawer}
           business={business}
           program={program}
           customer={enrolledCustomer}

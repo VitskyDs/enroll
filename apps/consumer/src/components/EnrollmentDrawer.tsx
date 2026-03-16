@@ -9,6 +9,7 @@ interface Customer {
 }
 
 interface EnrollmentDrawerProps {
+  open: boolean
   business: ConsumerBusiness
   program: ConsumerLoyaltyProgram | null
   customer: Customer
@@ -70,13 +71,13 @@ function PointsMeter({ points, target = 100 }: { points: number; target?: number
   )
 }
 
-export default function EnrollmentDrawer({ business, program, customer, onClose }: EnrollmentDrawerProps) {
+export default function EnrollmentDrawer({ open, business, program, customer, onClose }: EnrollmentDrawerProps) {
   const navigate = useNavigate()
   const points = customer.points ?? 0
   const nextTarget = 100
 
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
       <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 px-6 pb-6 gap-6">
         {/* Image placeholder */}
         <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0 mt-2" />
