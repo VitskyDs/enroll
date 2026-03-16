@@ -1,16 +1,16 @@
 ---
 id: TASK-3
 title: Customer enrollment page
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-02 19:17'
-updated_date: '2026-03-06 21:56'
+updated_date: '2026-03-15 16:44'
 labels: []
 milestone: m-2
 dependencies:
   - TASK-1
 priority: high
-ordinal: 3000
+ordinal: 25000
 ---
 
 ## Description

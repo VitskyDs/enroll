@@ -4,7 +4,7 @@ title: 'Consumer app — routing setup, shadcn theme, and Refer screen'
 status: Done
 assignee: []
 created_date: '2026-03-15 10:48'
-updated_date: '2026-03-15 10:49'
+updated_date: '2026-03-15 16:44'
 labels:
   - consumer
   - frontend
@@ -16,6 +16,7 @@ references:
   - apps/consumer/src/main.tsx
   - apps/consumer/package.json
 priority: high
+ordinal: 24000
 ---
 
 ## Description

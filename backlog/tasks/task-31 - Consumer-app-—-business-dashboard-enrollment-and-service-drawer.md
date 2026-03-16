@@ -1,9 +1,10 @@
 ---
 id: TASK-31
 title: 'Consumer app — business dashboard, enrollment, and service drawer'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-15 16:42'
+updated_date: '2026-03-16 17:56'
 labels:
   - consumer
   - frontend
@@ -24,6 +25,7 @@ documentation:
   - >-
     https://www.figma.com/design/gpdFAzL05BQXO7czT8EEhd/Enroll---Consumer?node-id=2055-3960
 priority: high
+ordinal: 26000
 ---
 
 ## Description
