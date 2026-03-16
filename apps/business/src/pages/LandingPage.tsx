@@ -1,13 +1,59 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-// Stub: replace with real name from Google OAuth session
-const STUB_USER_NAME = 'Sarah'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
+  const [checking, setChecking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function goToOnboarding() {
-    navigate('/onboarding', { state: { userName: STUB_USER_NAME } })
+  // After Google OAuth redirect, user will be set — run post-login logic
+  useEffect(() => {
+    if (loading || !user) return
+
+    setChecking(true)
+    setError(null)
+
+    async function handlePostLogin() {
+      // Check allowlist
+      const { data: allowed } = await supabase
+        .from('allowed_emails')
+        .select('email')
+        .eq('email', user!.email)
+        .maybeSingle()
+
+      if (!allowed) {
+        await supabase.auth.signOut()
+        setError("You're not on the access list yet. Reach out to get access.")
+        setChecking(false)
+        return
+      }
+
+      // Check if user already has a business
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('owner_id', user!.id)
+        .maybeSingle()
+
+      if (business) {
+        navigate('/dashboard')
+      } else {
+        navigate('/onboarding')
+      }
+    }
+
+    handlePostLogin()
+  }, [user, loading, navigate])
+
+  function signInWithGoogle() {
+    setError(null)
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
   }
 
   function goToDemo() {
@@ -38,8 +84,9 @@ export default function LandingPage() {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <button
-              onClick={goToOnboarding}
-              className="flex items-center justify-center gap-2 w-full h-10 rounded-lg border border-[#d4d4d4] bg-white text-sm font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+              onClick={signInWithGoogle}
+              disabled={checking || loading}
+              className="flex items-center justify-center gap-2 w-full h-10 rounded-lg border border-[#d4d4d4] bg-white text-sm font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.05)] disabled:opacity-50"
             >
               <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -49,17 +96,12 @@ export default function LandingPage() {
               </svg>
               Continue with Google
             </button>
-            <button
-              onClick={goToOnboarding}
-              className="flex items-center justify-center w-full h-10 rounded-lg bg-[#171717] text-sm font-medium text-[#fafafa]"
-            >
-              Get started
-            </button>
           </div>
-          <p className="text-sm text-center text-[#737373]">
-            Already have an account?{' '}
-            <span className="font-bold text-[#0a0a0a] cursor-pointer">Sign in</span>
-          </p>
+
+          {error && (
+            <p className="text-sm text-center text-red-600">{error}</p>
+          )}
+
           {import.meta.env.DEV && (
             <button
               onClick={goToDemo}

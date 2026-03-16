@@ -12,10 +12,12 @@ export async function saveToSupabase(
   onboardingData: BusinessOnboardingData,
   services: Service[],
   program: LoyaltyProgram,
+  userId: string,
 ): Promise<{ business_id: string; program_id: string }> {
   const { data: business, error: bizError } = await supabase
     .from('businesses')
     .insert({
+      owner_id: userId,
       name: onboardingData.business_name,
       website_url: onboardingData.website || null,
       offering_type: onboardingData.offering_type,

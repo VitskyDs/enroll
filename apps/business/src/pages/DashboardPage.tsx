@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Bell, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { BottomNav } from '@/components/BottomNav'
 import { Row } from '@/components/ChecklistRow'
 import { InviteDrawer } from '@/components/InviteDrawer'
@@ -14,17 +15,18 @@ const CHECKLIST_ITEMS = [
 ]
 
 export default function DashboardPage() {
+  const { user } = useAuth()
   const [businessName, setBusinessName] = useState<string>('Your business')
   const [inviteUrl, setInviteUrl] = useState<string>('')
   const [inviteOpen, setInviteOpen] = useState(false)
 
   useEffect(() => {
+    if (!user) return
     supabase
       .from('businesses')
       .select('name, slug')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+      .eq('owner_id', user.id)
+      .maybeSingle()
       .then(({ data }) => {
         if (data?.name) setBusinessName(data.name)
         if (data?.slug) {
@@ -32,7 +34,7 @@ export default function DashboardPage() {
           setInviteUrl(`${consumerBase}/join/${data.slug}`)
         }
       })
-  }, [])
+  }, [user])
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
