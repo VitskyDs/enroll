@@ -1,5 +1,6 @@
 import type { ConsumerService } from '@/hooks/useServices'
 import type { ConsumerLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
+import { Drawer, DrawerContent } from '@/components/ui/drawer'
 
 interface ServiceDrawerProps {
   service: ConsumerService
@@ -25,23 +26,13 @@ function formatEarnedPoints(program: ConsumerLoyaltyProgram | null): string {
   if (rules.cashback_percent != null) {
     return `${rules.cashback_percent}% back`
   }
-  // Tiered / spend-based programs — show a short generic label
   return 'Loyalty points'
 }
 
 export default function ServiceDrawer({ service, program, onClose }: ServiceDrawerProps) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      {/* Sheet */}
-      <div className="relative bg-white rounded-t-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] overflow-y-auto max-h-[90vh] flex flex-col pb-12">
-        {/* Handle — on white strip above image */}
-        <div className="flex justify-center pt-2 pb-3 shrink-0">
-          <div className="w-[50px] h-[3px] bg-[#f5f5f5] rounded-full" />
-        </div>
-
+    <Drawer open onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 pb-12">
         {/* Service image */}
         {service.image_url ? (
           <img
@@ -97,7 +88,7 @@ export default function ServiceDrawer({ service, program, onClose }: ServiceDraw
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   )
 }

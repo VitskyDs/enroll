@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { BadgeCheck, ChevronRight } from 'lucide-react'
 import type { ConsumerBusiness } from '@/hooks/useBusiness'
 import type { ConsumerLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
+import { Drawer, DrawerContent } from '@/components/ui/drawer'
 
 interface Customer {
   points: number
@@ -75,19 +76,10 @@ export default function EnrollmentDrawer({ business, program, customer, onClose 
   const nextTarget = 100
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      {/* Sheet */}
-      <div className="relative bg-white rounded-t-[10px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] overflow-y-auto max-h-[90vh] flex flex-col gap-6 px-6 pb-6 pt-3">
-        {/* Handle */}
-        <div className="flex justify-center">
-          <div className="w-[50px] h-[3px] bg-[#f5f5f5] rounded-full" />
-        </div>
-
+    <Drawer open onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 px-6 pb-6 gap-6">
         {/* Image placeholder */}
-        <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0" />
+        <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0 mt-2" />
 
         {/* Heading */}
         <div className="flex flex-col gap-1">
@@ -142,7 +134,7 @@ export default function EnrollmentDrawer({ business, program, customer, onClose 
             Complete your first visit to start earning {program.currency_name} and unlock rewards.
           </p>
         )}
-      </div>
-    </div>
+      </DrawerContent>
+    </Drawer>
   )
 }
