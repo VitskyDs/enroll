@@ -6,6 +6,7 @@ export interface UserProfile {
   id: string
   full_name: string | null
   avatar_url: string | null
+  role: 'owner' | 'consumer'
 }
 
 interface AuthContextValue {
@@ -24,8 +25,8 @@ async function upsertProfile(user: User): Promise<UserProfile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .upsert({ id: user.id, full_name, avatar_url, updated_at: new Date().toISOString() }, { onConflict: 'id' })
-    .select('id, full_name, avatar_url')
+    .upsert({ id: user.id, full_name, avatar_url, role: 'owner', updated_at: new Date().toISOString() }, { onConflict: 'id' })
+    .select('id, full_name, avatar_url, role')
     .single()
 
   if (error) {
