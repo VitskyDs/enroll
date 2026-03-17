@@ -37,32 +37,34 @@ export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidg
   const progress = STEP_PROGRESS[step] ?? 10
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <header className="flex flex-col gap-4 px-4 pt-safe pb-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center justify-center w-10 h-10 rounded bg-zinc-100 shrink-0"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1 h-2.5 rounded-full bg-zinc-100 overflow-hidden">
-            <div
-              className="h-full bg-zinc-900 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+    <div className="flex flex-col h-screen bg-white items-center">
+      <div className="flex flex-col flex-1 w-full max-w-lg overflow-hidden">
+        <header className="flex flex-col gap-4 px-4 pt-safe pb-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="flex items-center justify-center w-10 h-10 rounded bg-zinc-100 shrink-0"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex-1 h-2.5 rounded-full bg-zinc-100 overflow-hidden">
+              <div
+                className="h-full bg-zinc-900 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-2xl font-semibold leading-8">{title}</p>
-          <p className="text-base text-zinc-500 leading-6">{subtitle}</p>
-        </div>
-      </header>
+          <div className="flex flex-col gap-2">
+            <p className="text-2xl font-semibold leading-8">{title}</p>
+            <p className="text-base text-zinc-500 leading-6">{subtitle}</p>
+          </div>
+        </header>
 
-      <MessageList messages={messages} isTyping={isTyping} renderWidget={renderWidget} />
+        <MessageList messages={messages} isTyping={isTyping} renderWidget={renderWidget} />
 
-      {inputEnabled && <ChatInput onSend={onSend} placeholder={placeholder} />}
+        {inputEnabled && <ChatInput onSend={onSend} placeholder={placeholder} />}
+      </div>
     </div>
   )
 }

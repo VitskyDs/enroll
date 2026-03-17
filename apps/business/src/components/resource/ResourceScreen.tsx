@@ -44,10 +44,11 @@ export function ResourceScreen<T extends { id: string }>({
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
-      <div className="flex-1 overflow-y-auto flex flex-col pb-28">
+      <div className="flex-1 overflow-y-auto pb-28 lg:pb-6">
+      <div className="flex flex-col w-full max-w-4xl mx-auto">
 
         {/* Page header */}
-        <div className="bg-white flex items-center gap-2 overflow-clip pb-4 pt-safe px-4 w-full">
+        <div className="bg-white flex items-center gap-2 overflow-clip pb-4 pt-safe px-4 lg:px-6 w-full">
           <p className="flex-1 text-2xl font-semibold text-zinc-950 tracking-tight leading-tight">
             {title}
           </p>
@@ -61,7 +62,7 @@ export function ResourceScreen<T extends { id: string }>({
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col px-4 pt-6 gap-6">
+        <div className="flex-1 flex flex-col px-4 lg:px-6 pt-6 gap-6">
 
           {/* Loading */}
           {isLoading && (
@@ -149,6 +150,7 @@ export function ResourceScreen<T extends { id: string }>({
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

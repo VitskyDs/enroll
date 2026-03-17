@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AppShell } from '@/components/AppShell'
 import LandingPage from '@/pages/LandingPage'
 import BasicsPage from '@/pages/onboarding/BasicsPage'
 import PreferencesPage from '@/pages/onboarding/PreferencesPage'
@@ -22,21 +23,23 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route element={<ProtectedRoute />}>
-          {/* Onboarding */}
+          {/* Onboarding — narrow layout, no sidebar */}
           <Route path="/onboarding" element={<BasicsPage />} />
           <Route path="/onboarding/preferences" element={<PreferencesPage />} />
           <Route path="/onboarding/recommendation" element={<RecommendationPage />} />
           <Route path="/onboarding/generating" element={<GeneratingPage />} />
           <Route path="/onboarding/preview" element={<ProgramPreviewPage />} />
           <Route path="/onboarding/tnc" element={<TncPage />} />
-          {/* Dashboard */}
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/program" element={<ProgramPage />} />
-          <Route path="/program/:feature" element={<ProgramFeaturePage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/services/:id" element={<ServiceFormPage />} />
-          <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/customers/:id" element={<CustomerPage />} />
+          {/* Dashboard — AppShell adds sidebar on desktop */}
+          <Route element={<AppShell />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/program" element={<ProgramPage />} />
+            <Route path="/program/:feature" element={<ProgramFeaturePage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/services/:id" element={<ServiceFormPage />} />
+            <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/customers/:id" element={<CustomerPage />} />
+          </Route>
         </Route>
       </Routes>
     </AuthProvider>

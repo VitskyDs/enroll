@@ -21,7 +21,7 @@ export function BottomNav({ active: activeProp, onShare }: Props) {
       <SettingsOverlay open={settingsOpen} onClose={() => setSettingsOpen(false)} onInvite={onShare} />
 
       <div
-        className="fixed bottom-0 left-0 right-0 flex items-start justify-center gap-3 px-4 pt-3 z-50"
+        className="lg:hidden fixed bottom-0 left-0 right-0 flex items-start justify-center gap-3 px-4 pt-3 z-50"
         style={{ ...SAFE_PADDING, maxWidth: '420px', width: '100%', justifySelf: 'center' }}
       >
         {/* Left pill: Search */}

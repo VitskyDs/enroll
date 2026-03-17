@@ -43,7 +43,8 @@ export default function DashboardPage() {
   return (
     <div className="relative flex flex-col h-screen overflow-hidden bg-white">
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-6 px-4 pt-safe pb-28">
+      <div className="flex-1 overflow-y-auto pb-28 lg:pb-6">
+      <div className="flex flex-col gap-6 px-4 lg:px-6 pt-safe w-full max-w-4xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-2">
@@ -105,6 +106,7 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+      </div>
       </div>
 
       {import.meta.env.DEV && (
