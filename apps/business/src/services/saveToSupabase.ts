@@ -12,10 +12,12 @@ export async function saveToSupabase(
   onboardingData: BusinessOnboardingData,
   services: Service[],
   program: LoyaltyProgram,
+  userId: string,
 ): Promise<{ business_id: string; program_id: string }> {
   const { data: business, error: bizError } = await supabase
     .from('businesses')
     .insert({
+      owner_id: userId,
       name: onboardingData.business_name,
       website_url: onboardingData.website || null,
       offering_type: onboardingData.offering_type,
@@ -24,9 +26,6 @@ export async function saveToSupabase(
       primary_goal: onboardingData.primary_goal,
       visit_frequency: onboardingData.visit_frequency,
       spend_variance: onboardingData.spend_variance,
-      // Legacy columns — set defaults for DB compat
-      category: 'other',
-      goal: onboardingData.primary_goal === 'acquire' ? 'referrals' : onboardingData.primary_goal === 'retain' ? 'retention' : 'frequency',
     })
     .select('id')
     .single()

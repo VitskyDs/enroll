@@ -4,6 +4,7 @@ import { ChatShell } from '@/components/chat/ChatShell'
 import { UrlSelector } from '@/components/UrlSelector'
 import { ServiceSelector } from '@/components/ServiceSelector'
 import { useBasicsOnboarding } from '@/hooks/useBasicsOnboarding'
+import { useAuth } from '@/contexts/AuthContext'
 import type { ChatMessage, OnboardingStep } from '@/types'
 
 const INPUT_STEPS: OnboardingStep[] = ['greeting', 'collect_url_or_name', 'manual_entry']
@@ -11,12 +12,15 @@ const INPUT_STEPS: OnboardingStep[] = ['greeting', 'collect_url_or_name', 'manua
 export default function BasicsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const locationState = location.state as { userName?: string; demo?: boolean } | null
-  const userName = locationState?.userName
+  const { profile } = useAuth()
+  const locationState = location.state as { demo?: boolean } | null
   const demoMode = locationState?.demo === true
 
+  // Use first name from Google profile; hook falls back to 'there' if undefined
+  const firstName = profile?.full_name?.trim().split(/\s+/)[0]
+
   const { state, start, startDemo, handleUserInput, selectUrl, confirmServices, continueToProgram } =
-    useBasicsOnboarding(userName, (data) => {
+    useBasicsOnboarding(firstName, (data) => {
       navigate('/onboarding/preferences', { state: { ...data, demo: demoMode } })
     })
 

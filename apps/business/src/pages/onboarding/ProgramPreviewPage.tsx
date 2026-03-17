@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   Megaphone, Settings2, ClipboardCheck, CalendarCheck, TicketCheck,
   Gift, Flag, Trophy, Crown, Users, ChevronRight,
@@ -200,6 +201,7 @@ const TIER_ICONS = [
 export default function ProgramPreviewPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuth()
   const routeState = location.state as LocationState | null
   // Dev-only fallback so the page can be inspected at /onboarding/preview without routing state
   const state: LocationState | null = routeState ?? (
@@ -210,11 +212,11 @@ export default function ProgramPreviewPage() {
   const savedRef = useRef(false)
 
   useEffect(() => {
-    if (!state || savedRef.current) return
+    if (!state || savedRef.current || !user) return
     savedRef.current = true
     const { onboardingData, program } = state
-    saveToSupabase(onboardingData, onboardingData.services ?? [], program).catch(() => {})
-  }, [state])
+    saveToSupabase(onboardingData, onboardingData.services ?? [], program, user.id).catch(() => {})
+  }, [state, user])
 
   if (!state) {
     return (
