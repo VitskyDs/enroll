@@ -26,7 +26,7 @@ export default function GeneratingPage() {
   const [error, setError] = useState<string | null>(null)
 
   const skipToPreview = () =>
-    navigate('/onboarding/preview', { state: { onboardingData, recommendation, program: DEMO_PROGRAM } })
+    navigate('/onboarding/preview', { state: { onboardingData, recommendation, program: DEMO_PROGRAM, demo: true } })
 
   useEffect(() => {
     // In demo mode, skip the API call entirely

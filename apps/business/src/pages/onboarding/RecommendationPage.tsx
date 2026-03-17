@@ -39,7 +39,8 @@ export default function RecommendationPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white items-center">
+    <div className="flex flex-col flex-1 w-full max-w-lg overflow-hidden">
       <header className="flex flex-col gap-4 px-4 pt-safe pb-6">
         <div className="flex items-center gap-4">
           <button
@@ -107,6 +108,7 @@ export default function RecommendationPage() {
           Change my answers
         </button>
       </div>
+    </div>
     </div>
   )
 }

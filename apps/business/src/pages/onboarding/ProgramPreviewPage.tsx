@@ -18,6 +18,7 @@ interface LocationState {
   onboardingData: BusinessOnboardingData & { services: Service[] }
   recommendation: ProgramRecommendation
   program: LoyaltyProgram
+  demo?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -206,9 +207,10 @@ export default function ProgramPreviewPage() {
   // Dev-only fallback so the page can be inspected at /onboarding/preview without routing state
   const state: LocationState | null = routeState ?? (
     import.meta.env.DEV
-      ? { onboardingData: { ...DEMO_ONBOARDING_DATA }, recommendation: DEMO_RECOMMENDATION, program: DEMO_PROGRAM }
+      ? { onboardingData: { ...DEMO_ONBOARDING_DATA }, recommendation: DEMO_RECOMMENDATION, program: DEMO_PROGRAM, demo: true }
       : null
   )
+  const demoMode = state?.demo === true
   const savedRef = useRef(false)
 
   useEffect(() => {
@@ -323,7 +325,8 @@ export default function ProgramPreviewPage() {
   const bonusValueLabel = bonusRule ? formatBonusValue(bonusRule) : null
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white items-center">
+    <div className="flex flex-col flex-1 w-full max-w-lg overflow-hidden">
 
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto">
@@ -489,7 +492,7 @@ export default function ProgramPreviewPage() {
           {/* ── T&C ── */}
           {program.terms_and_conditions && (
             <button
-              onClick={() => navigate('/onboarding/tnc', { state: { terms: program.terms_and_conditions } })}
+              onClick={() => navigate('/onboarding/tnc', { state: { terms: program.terms_and_conditions, demo: demoMode } })}
               className="flex items-center gap-1 px-0 py-2 text-sm font-medium text-zinc-900 min-h-9"
             >
               Read program T&amp;C
@@ -516,6 +519,7 @@ export default function ProgramPreviewPage() {
         </button>
       </div>
 
+    </div>
     </div>
   )
 }

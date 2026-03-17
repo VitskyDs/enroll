@@ -12,7 +12,8 @@ export default function TncPage() {
   const terms = state?.terms ?? ''
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white items-center">
+    <div className="flex flex-col flex-1 w-full max-w-lg overflow-hidden">
 
       {/* ── Fixed header ── */}
       <div className="bg-white flex h-[120px] items-end overflow-hidden pb-4 pt-[var(--safe-area-inset-top,0px)] px-4 shrink-0">
@@ -37,6 +38,7 @@ export default function TncPage() {
         </div>
       </div>
 
+    </div>
     </div>
   )
 }
