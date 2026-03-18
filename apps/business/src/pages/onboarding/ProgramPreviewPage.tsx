@@ -350,9 +350,11 @@ export default function ProgramPreviewPage() {
               <p className="text-[20px] font-semibold text-zinc-900 leading-[26px]">
                 {program.program_name}
               </p>
-              <p className="text-base text-zinc-600 leading-6">
-                {program.program_purpose}
-              </p>
+              <div className="flex flex-col gap-2">
+                {String(program.program_purpose).split(/\n+/).flatMap(s => s.split(/(?<=\.)\s+(?=[A-Z])/)).filter(Boolean).map((para, i) => (
+                  <p key={i} className="text-base text-zinc-600 leading-6">{para.trim()}</p>
+                ))}
+              </div>
             </div>
 
             {/* Overview cards */}
