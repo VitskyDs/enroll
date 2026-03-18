@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { ChatShell } from '@/components/chat/ChatShell'
 import { PrimaryGoalSelector, VisitFrequencySelector, SpendVarianceSelector } from '@/components/PreferencesSelectors'
 import { usePreferencesOnboarding } from '@/hooks/usePreferencesOnboarding'
@@ -11,12 +12,16 @@ export default function PreferencesPage() {
   const location = useLocation()
   const phase1Data = location.state as Phase1Data & { demo?: boolean }
   const demoMode = phase1Data?.demo === true
+  const [isLoading, setIsLoading] = useState(false)
 
   const { state, start, selectPrimaryGoal, selectVisitFrequency, selectSpendVariance } =
     usePreferencesOnboarding((prefsData) => {
-      navigate('/onboarding/recommendation', {
-        state: { ...phase1Data, ...prefsData, demo: demoMode },
-      })
+      setIsLoading(true)
+      setTimeout(() => {
+        navigate('/onboarding/recommendation', {
+          state: { ...phase1Data, ...prefsData, demo: demoMode },
+        })
+      }, 1600)
     })
 
   useEffect(() => {
@@ -50,6 +55,15 @@ export default function PreferencesPage() {
       )
     }
     return null
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen bg-white items-center justify-center gap-4">
+        <Loader2 className="size-6 animate-spin text-zinc-400" />
+        <p className="text-sm text-zinc-500">Finding your best match…</p>
+      </div>
+    )
   }
 
   return (

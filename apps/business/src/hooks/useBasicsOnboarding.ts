@@ -136,11 +136,23 @@ export function useBasicsOnboarding(
             dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
             return 'No results found. Ask the user to provide their website URL directly or enter details manually.'
           }
-          dispatch({ type: 'SET_CANDIDATE_URLS', urls: results })
+          // Deduplicate by domain — keep only the first result per hostname
+          const seenDomains = new Set<string>()
+          const uniqueResults = results.filter((r) => {
+            try {
+              const domain = new URL(r.url).hostname
+              if (seenDomains.has(domain)) return false
+              seenDomains.add(domain)
+              return true
+            } catch {
+              return true
+            }
+          })
+          dispatch({ type: 'SET_CANDIDATE_URLS', urls: uniqueResults })
           dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
           pendingWidgetRef.current = 'url_selector'
-          const list = results.map((r, i) => `${i + 1}. ${r.title} (${r.url})`).join('\n')
-          return `Found ${results.length} results. Showing URL picker to user:\n${list}\nWait for the user to select one, then call submit_url with the chosen URL.`
+          const list = uniqueResults.map((r, i) => `${i + 1}. ${r.title} (${r.url})`).join('\n')
+          return `Found ${uniqueResults.length} results. Showing URL picker to user:\n${list}\nWait for the user to select one, then call submit_url with the chosen URL.`
         } catch {
           dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
           return 'Search failed. Ask the user to provide their website URL directly or enter details manually.'

@@ -83,7 +83,7 @@ If brand_personality is not null, work through each sub-field:
 
 **program_type**: KEEP unchanged.
 
-**program_type_reason**: REWRITE. 1 plain-language sentence explaining to the business owner why this program type was chosen. Reference their primary_goal, visit_frequency, or spend_variance. Owner-facing — factual, no marketing tone.
+**program_type_reason**: REWRITE. 1 short plain-language sentence (max 15 words) explaining why this program type fits. Reference one of: primary_goal, visit_frequency, or spend_variance. Owner-facing, factual, no marketing tone.
 
 **industry**: SUBSTITUTE with the actual business industry.
 
@@ -108,13 +108,13 @@ Do NOT add any other earn mechanisms. These two are the only ones.
 
 **points_expiry_rules**: ADJUST for points programs based on primary_goal (retain/revenue → 90 days, acquire → 180 days). For cashback: KEEP (365 days). For tiered: KEEP (n/a).
 
-**bonus_rule**: KEEP as a single object (not an array). Pick the ONE most appropriate bonus trigger for this business based on primary_goal and industry. ADJUST the value.
+**bonus_rule**: KEEP as a single object (not an array). Pick the ONE most appropriate bonus trigger for this business based on primary_goal and industry. ADJUST the value. IMPORTANT: Only use triggers that can be tracked at the point of sale without additional data collection: first_visit, spend_threshold, visit_milestone, double_points_day, anniversary_of_enrollment, tier_upgrade. Do NOT use birthday_month — it requires collecting customer birthday data the business may not have.
 
 **program_purpose**: WRITE 1–2 plain-language sentences explaining to the business owner why this specific program structure was chosen. Reference their industry, primary_goal, and visit/spend pattern. Factual, no marketing tone.
 
 **referral_rules**: KEEP the JSON structure. ADJUST reward values to fit the business context. Use tone and customer_relationship_model to calibrate brand voice.
 
-**brand_voice_summary**: REWRITE to reflect this business's identity. 2–3 sentences. Describe tone, relationship the program should communicate, one concrete example notification.
+**brand_voice_summary**: REWRITE. 1 short sentence written in first person (as the system speaking to the owner) describing how it will communicate with their customers. Example: "When messaging your customers, I'll sound like a trusted expert who remembers every client by name." Adapt the voice analogy to the business's tone and customer_relationship_model.
 
 **llm_customization_hints**: INCLUDE UNCHANGED from archetype.
 
