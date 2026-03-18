@@ -58,7 +58,6 @@ function CustomerItem({ customer, onClick }: { customer: CustomerRow; onClick?: 
 export default function CustomersPage() {
   const navigate = useNavigate()
   const [customers, setCustomers] = useState<CustomerRow[]>([])
-  const [hasProgram, setHasProgram] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -81,8 +80,6 @@ export default function CustomersPage() {
         setIsLoading(false)
         return
       }
-
-      setHasProgram(!!business.loyalty_program_id)
 
       if (!business.loyalty_program_id) {
         setIsLoading(false)
@@ -166,21 +163,19 @@ export default function CustomersPage() {
 
   // When no program exists, show empty state without toolbar
   // When program exists (even 0 customers), show toolbar — zero customers maps to isNoResults
-  const hasAnyItems = hasProgram === true
-
   return (
     <>
       <ResourceScreen
         title="Customers"
         items={filteredCustomers}
-        hasAnyItems={hasAnyItems}
+        hasAnyItems={customers.length > 0}
         isLoading={isLoading}
         error={error}
-        onAdd={() => {}}
+        onAdd={() => navigate('/customers/new')}
         renderItem={c => <CustomerItem key={c.id} customer={c} onClick={() => navigate(`/customers/${c.id}`)} />}
         emptyIcon={<UsersRound className="w-5 h-5 text-zinc-600" />}
-        emptyHeading="Get to know your customers"
-        emptySubtext="Every time a customer enrolls or places an order, their details are saved."
+        emptyHeading="No customers yet"
+        emptySubtext="Invite your first customers to join your loyalty program"
         emptyCtaLabel="Add customer"
         emptySecondaryActions={emptySecondaryActions}
         toolbar={toolbar}

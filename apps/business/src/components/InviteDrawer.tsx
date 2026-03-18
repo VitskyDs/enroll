@@ -2,11 +2,11 @@ import { useState } from 'react'
 import QRCode from 'react-qr-code'
 import { Copy, Share2 } from 'lucide-react'
 import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-  DrawerDescription,
-} from '@/components/ui/drawer'
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
 interface InviteDrawerProps {
   open: boolean
@@ -31,7 +31,6 @@ export function InviteDrawer({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // fallback: select a temp input
       const el = document.createElement('input')
       el.value = inviteUrl
       document.body.appendChild(el)
@@ -51,24 +50,23 @@ export function InviteDrawer({
         // user cancelled — do nothing
       }
     } else {
-      // No Web Share API (desktop) — fall back to clipboard
       handleCopy()
     }
   }
 
   return (
-    <Drawer open={open} onClose={onClose}>
-      <DrawerContent className="bg-[#171717] border-0 px-6 pb-8 gap-6">
-        <DrawerTitle className="sr-only">Invite customers</DrawerTitle>
-        <DrawerDescription className="sr-only">Share your loyalty program link with customers</DrawerDescription>
+    <Dialog open={open} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-w-sm p-6 flex flex-col gap-6">
+        <DialogTitle className="sr-only">Invite customers</DialogTitle>
+        <DialogDescription className="sr-only">Share your loyalty program link with customers</DialogDescription>
 
-        {/* White card: heading + QR code */}
-        <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col items-center gap-5 w-full">
+        {/* QR card */}
+        <div className="flex flex-col items-center gap-5">
           <div className="flex flex-col gap-1 text-center w-full">
             <p className="text-xl font-semibold text-zinc-900 leading-6">{businessName}</p>
             <p className="text-sm text-zinc-500 leading-5">{description}</p>
           </div>
-          <div className="w-[208px] h-[208px] bg-white rounded-lg flex items-center justify-center">
+          <div className="w-[208px] h-[208px] bg-white rounded-lg flex items-center justify-center border border-zinc-100">
             <QRCode
               value={inviteUrl}
               size={192}
@@ -96,7 +94,7 @@ export function InviteDrawer({
             <Share2 className="w-4 h-4" />
           </button>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   )
 }

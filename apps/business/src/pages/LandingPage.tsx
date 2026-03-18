@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { devSeed } from '@/dev/devSeed'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -17,8 +18,28 @@ export default function LandingPage() {
     })
   }
 
+  const [jumping, setJumping] = useState(false)
+
   function goToDemo() {
     navigate('/onboarding', { state: { demo: true } })
+  }
+
+  async function jumpToDashboard() {
+    const password = import.meta.env.VITE_DEV_USER_PASSWORD
+    if (!password) {
+      setError('Set VITE_DEV_USER_PASSWORD in .env.local')
+      return
+    }
+    setError(null)
+    setJumping(true)
+    try {
+      await devSeed(password)
+      navigate('/dashboard')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to jump to dashboard')
+    } finally {
+      setJumping(false)
+    }
   }
 
   return (
@@ -63,12 +84,21 @@ export default function LandingPage() {
           )}
 
           {import.meta.env.DEV && (
-            <button
-              onClick={goToDemo}
-              className="text-xs text-zinc-400 underline underline-offset-2 text-center mt-1"
-            >
-              dev: demo flow
-            </button>
+            <div className="flex flex-col items-center gap-2 mt-1">
+              <button
+                onClick={goToDemo}
+                className="text-xs text-zinc-400 underline underline-offset-2 text-center"
+              >
+                dev: demo flow
+              </button>
+              <button
+                onClick={jumpToDashboard}
+                disabled={jumping}
+                className="text-xs text-zinc-400 underline underline-offset-2 text-center disabled:opacity-50"
+              >
+                {jumping ? 'setting up…' : 'dev: jump to dashboard'}
+              </button>
+            </div>
           )}
         </div>
       </div>
