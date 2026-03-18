@@ -1,10 +1,10 @@
 ---
 id: TASK-32
 title: Business owner authentication with Google OAuth and email allowlist
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-16 18:16'
-updated_date: '2026-03-16 18:29'
+updated_date: '2026-03-17 07:22'
 labels:
   - auth
 dependencies: []
@@ -15,6 +15,7 @@ references:
   - apps/business/src/lib/supabase.ts
   - apps/business/src/App.tsx
 priority: high
+ordinal: 27000
 ---
 
 ## Description

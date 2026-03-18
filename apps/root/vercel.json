@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://app.joinenroll.app/$1",
+      "permanent": false
+    }
+  ]
+}
