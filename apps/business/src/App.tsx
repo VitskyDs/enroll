@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppShell } from '@/components/AppShell'
 import LandingPage from '@/pages/LandingPage'
+import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import BasicsPage from '@/pages/onboarding/BasicsPage'
 import PreferencesPage from '@/pages/onboarding/PreferencesPage'
 import RecommendationPage from '@/pages/onboarding/RecommendationPage'
@@ -22,6 +23,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route element={<ProtectedRoute />}>
           {/* Onboarding — narrow layout, no sidebar */}
           <Route path="/onboarding" element={<BasicsPage />} />

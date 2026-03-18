@@ -1,58 +1,19 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/AuthContext'
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const { user, loading } = useAuth()
-  const [checking, setChecking] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // After Google OAuth redirect, user will be set — run post-login logic
-  useEffect(() => {
-    if (loading || !user) return
-
-    setChecking(true)
-    setError(null)
-
-    async function handlePostLogin() {
-      // Check allowlist
-      const { data: allowed } = await supabase
-        .from('allowed_emails')
-        .select('email')
-        .eq('email', user!.email)
-        .maybeSingle()
-
-      if (!allowed) {
-        await supabase.auth.signOut()
-        setError("You're not on the access list yet. Reach out to get access.")
-        setChecking(false)
-        return
-      }
-
-      // Check if user already has a business
-      const { data: business } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('owner_id', user!.id)
-        .maybeSingle()
-
-      if (business) {
-        navigate('/dashboard')
-      } else {
-        navigate('/onboarding')
-      }
-    }
-
-    handlePostLogin()
-  }, [user, loading, navigate])
+  const location = useLocation()
+  const [error, setError] = useState<string | null>(
+    (location.state as { error?: string } | null)?.error ?? null
+  )
 
   function signInWithGoogle() {
     setError(null)
     supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
@@ -85,7 +46,6 @@ export default function LandingPage() {
           <div className="flex flex-col gap-3">
             <button
               onClick={signInWithGoogle}
-              disabled={checking || loading}
               className="flex items-center justify-center w-full min-h-10 px-6 py-[10px] rounded-lg border border-[#d4d4d4] bg-[rgba(255,255,255,0.1)] text-sm font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0)] disabled:opacity-50"
             >
               Continue with Google
