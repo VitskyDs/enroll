@@ -32,7 +32,7 @@ export function ChatMessage({ message, children }: Props) {
   return (
     <div className="flex flex-col gap-2 mb-4">
       {message.content && (
-        <div className="border border-zinc-200 rounded-2xl px-3 py-3 max-w-[85%] text-base leading-6">
+        <div className="border border-zinc-200 rounded-2xl px-3 py-3 max-w-[85%] text-base leading-6 self-start">
           {renderContent(message.content)}
         </div>
       )}
