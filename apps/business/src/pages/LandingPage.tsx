@@ -34,7 +34,7 @@ export default function LandingPage() {
     setJumping(true)
     try {
       await devSeed(password)
-      navigate('/dashboard')
+      window.location.href = '/dashboard'
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to jump to dashboard')
     } finally {

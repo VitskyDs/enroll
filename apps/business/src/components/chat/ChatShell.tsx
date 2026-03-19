@@ -30,9 +30,10 @@ interface Props {
   subtitle: string
   inputEnabled?: boolean
   placeholder?: string
+  hint?: string
 }
 
-export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidget, title, subtitle, inputEnabled: inputEnabledProp, placeholder }: Props) {
+export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidget, title, subtitle, inputEnabled: inputEnabledProp, placeholder, hint }: Props) {
   const inputEnabled = inputEnabledProp ?? false
   const progress = STEP_PROGRESS[step] ?? 10
 
@@ -64,6 +65,9 @@ export function ChatShell({ messages, isTyping, step, onSend, onBack, renderWidg
         <MessageList messages={messages} isTyping={isTyping} renderWidget={renderWidget} />
 
         {inputEnabled && <ChatInput onSend={onSend} placeholder={placeholder} />}
+        {inputEnabled && hint && (
+          <p className="text-xs text-zinc-400 text-center pb-4 -mt-3">{hint}</p>
+        )}
       </div>
     </div>
   )

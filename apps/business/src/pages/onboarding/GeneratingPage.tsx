@@ -13,6 +13,9 @@ const MESSAGES = [
   'Finalizing your program…',
 ]
 
+// Total demo animation duration in ms — matches the message cycle
+const DEMO_DURATION_MS = MESSAGES.length * 1800
+
 export default function GeneratingPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -25,18 +28,28 @@ export default function GeneratingPage() {
   const [messageIndex, setMessageIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const skipToPreview = () =>
-    navigate('/onboarding/preview', { state: { onboardingData, recommendation, program: DEMO_PROGRAM, demo: true } })
-
+  // Cycle through progress messages in both real and demo mode
   useEffect(() => {
-    // In demo mode, skip the API call entirely
-    if (demo) return
     const interval = setInterval(() => {
       setMessageIndex((i) => Math.min(i + 1, MESSAGES.length - 1))
     }, 1800)
     return () => clearInterval(interval)
-  }, [demo])
+  }, [])
 
+  // Demo mode: auto-navigate with dummy program after animation completes
+  useEffect(() => {
+    if (!demo) return
+    const timeout = setTimeout(() => {
+      navigate('/onboarding/preview', {
+        state: { onboardingData, recommendation, program: DEMO_PROGRAM, demo: true },
+      })
+    }, DEMO_DURATION_MS)
+    return () => clearTimeout(timeout)
+  // Run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Real mode: call the API
   useEffect(() => {
     if (demo) return
     generateProgram(onboardingData, recommendation)
@@ -52,20 +65,6 @@ export default function GeneratingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (demo) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen px-6 gap-6">
-        <p className="text-sm font-medium text-zinc-500">Demo mode — no API call made</p>
-        <button
-          onClick={skipToPreview}
-          className="h-10 px-6 rounded-lg bg-zinc-900 text-white text-sm font-medium"
-        >
-          Load dummy program
-        </button>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-6 gap-6">
@@ -77,11 +76,6 @@ export default function GeneratingPage() {
         >
           Go back and retry
         </button>
-        {import.meta.env.DEV && (
-          <button onClick={skipToPreview} className="text-xs text-zinc-400 underline underline-offset-2">
-            dev: use dummy program instead
-          </button>
-        )}
       </div>
     )
   }

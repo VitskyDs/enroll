@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { House, Award, HandHeart, UsersRound, Menu } from 'lucide-react'
+import { House, Award, HandHeart, UsersRound, Menu, ShoppingBag, Send, Hexagon, HandCoins } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SettingsOverlay } from '@/components/SettingsOverlay'
 
@@ -13,7 +13,11 @@ const NAV_ITEMS = [
   { key: 'home', label: 'Home', icon: House, route: '/dashboard' },
   { key: 'program', label: 'Program', icon: Award, route: '/program' },
   { key: 'services', label: 'Services', icon: HandHeart, route: '/services' },
+  { key: 'products', label: 'Products', icon: ShoppingBag, route: null },
   { key: 'customers', label: 'Customers', icon: UsersRound, route: '/customers' },
+  { key: 'invite', label: 'Invite customer', icon: Send, route: null },
+  { key: 'brand', label: 'Brand', icon: Hexagon, route: null },
+  { key: 'payment', label: 'Payment provider', icon: HandCoins, route: null },
 ] as const
 
 export function SidebarNav({ active, onShare }: Props) {
@@ -29,8 +33,9 @@ export function SidebarNav({ active, onShare }: Props) {
           <Button
             key={key}
             variant="ghost"
-            className={`justify-start gap-3 h-9 px-3 font-normal ${active === key ? 'bg-zinc-100 hover:bg-zinc-100' : ''}`}
-            onClick={() => navigate(route)}
+            disabled={route === null}
+            className={`justify-start gap-3 h-9 px-3 font-normal ${active === key ? 'bg-zinc-100 hover:bg-zinc-100' : ''} ${route === null ? 'opacity-40 cursor-default' : ''}`}
+            onClick={() => { if (route) navigate(route) }}
           >
             <Icon className="w-4 h-4 shrink-0" />
             {label}

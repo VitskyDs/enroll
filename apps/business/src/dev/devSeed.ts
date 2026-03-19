@@ -7,6 +7,12 @@ const DUMMY_BUSINESS = {
   website_url: 'https://lumierestudio.com',
   offering_type: 'service',
   industry: 'salon',
+  slug: 'lumiere-studio',
+  tagline: 'Where beauty meets intention.',
+  address: '142 Maplewood Ave, San Francisco, CA 94117',
+  hours: 'Tue–Sat 10am–7pm',
+  logo_url: '/lumiere/logo.png',
+  cover_image_url: '/lumiere/cover.jpg',
   brand_personality: {
     tone: 'sophisticated',
     identity_keywords: ['luxury', 'modern', 'elevated'],
@@ -19,10 +25,38 @@ const DUMMY_BUSINESS = {
 }
 
 const DUMMY_SERVICES = [
-  { name: 'Signature cut & style', price_cents: 8500, duration_minutes: 60, category: 'Haircut', status: 'active' },
-  { name: 'Full color & highlights', price_cents: 18000, duration_minutes: 150, category: 'Color', status: 'active' },
-  { name: 'Blowout & finish', price_cents: 5500, duration_minutes: 45, category: 'Styling', status: 'active' },
-  { name: 'Deep conditioning treatment', price_cents: 4500, duration_minutes: 30, category: 'Treatment', status: 'draft' },
+  {
+    name: 'Signature cut & style',
+    description: 'Precision cut tailored to your face shape and lifestyle, finished with a salon blowout.',
+    price_cents: 8500,
+    duration_minutes: 60,
+    category: 'Haircut',
+    status: 'active',
+  },
+  {
+    name: 'Full color & highlights',
+    description: 'Custom color formulation with balayage or foil highlights. Includes toning and treatment.',
+    price_cents: 18000,
+    duration_minutes: 150,
+    category: 'Color',
+    status: 'active',
+  },
+  {
+    name: 'Blowout & finish',
+    description: 'Full shampoo, blow-dry, and style. Perfect for any occasion.',
+    price_cents: 5500,
+    duration_minutes: 45,
+    category: 'Styling',
+    status: 'active',
+  },
+  {
+    name: 'Deep conditioning treatment',
+    description: 'Intensive repair mask for dry or color-treated hair. Add-on or standalone.',
+    price_cents: 4500,
+    duration_minutes: 30,
+    category: 'Treatment',
+    status: 'draft',
+  },
 ]
 
 const DUMMY_PROGRAM = {
@@ -118,12 +152,34 @@ const DUMMY_CUSTOMERS = [
     total_spend: 4500,
     status: 'inactive',
   },
+  {
+    first_name: 'Priya',
+    last_name: 'Nair',
+    name: 'Priya Nair',
+    email: 'priya.nair@example.com',
+    phone: '+1 415 555 0291',
+    points: 680,
+    tier: 'Gold',
+    total_spend: 54000,
+    status: 'active',
+  },
+  {
+    first_name: 'Daniel',
+    last_name: 'Torres',
+    name: 'Daniel Torres',
+    email: 'daniel.t@example.com',
+    phone: null,
+    points: 90,
+    tier: 'Pearl',
+    total_spend: 8500,
+    status: 'active',
+  },
 ]
 
 export async function devSeed(password: string): Promise<void> {
   // 1. Sign out first to clear any stale session that would block signInWithPassword,
   //    then sign in as the dev test account.
-  await supabase.auth.signOut()
+  await supabase.auth.signOut({ scope: 'local' })
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email: DEV_EMAIL,
     password,
@@ -135,12 +191,26 @@ export async function devSeed(password: string): Promise<void> {
   // 2. Check for existing fully-seeded business (business + loyalty program)
   const { data: existing } = await supabase
     .from('businesses')
-    .select('id, loyalty_program_id')
+    .select('id, loyalty_program_id, slug, logo_url')
     .eq('owner_id', userId)
     .maybeSingle()
 
   if (existing?.loyalty_program_id) {
-    // Already fully seeded — nothing to do
+    // Already fully seeded — backfill any fields that may have been added since last seed
+    const needsBackfill = !existing.slug || !existing.logo_url
+    if (needsBackfill) {
+      await supabase
+        .from('businesses')
+        .update({
+          slug: DUMMY_BUSINESS.slug,
+          tagline: DUMMY_BUSINESS.tagline,
+          address: DUMMY_BUSINESS.address,
+          hours: DUMMY_BUSINESS.hours,
+          logo_url: DUMMY_BUSINESS.logo_url,
+          cover_image_url: DUMMY_BUSINESS.cover_image_url,
+        })
+        .eq('id', existing.id)
+    }
     return
   }
 
@@ -167,7 +237,7 @@ export async function devSeed(password: string): Promise<void> {
 
   if (!existingServices?.length) {
     const { error: svcError } = await supabase.from('services').insert(
-      DUMMY_SERVICES.map(s => ({ ...s, business_id, source: 'ai_extracted', description: null })),
+      DUMMY_SERVICES.map(s => ({ ...s, business_id, source: 'ai_extracted', note: null })),
     )
     if (svcError) console.error('Failed to seed services:', svcError.message)
   }

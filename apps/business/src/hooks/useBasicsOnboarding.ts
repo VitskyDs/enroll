@@ -3,7 +3,7 @@ import { anthropic } from '@/lib/anthropic'
 import { searchBusiness } from '@/services/searchBusiness'
 import { extractFromUrl } from '@/services/extractFromUrl'
 import { ONBOARDING_SYSTEM_PROMPT, ONBOARDING_TOOLS } from '@/prompts/onboardingAgent'
-import { DEMO_ONBOARDING_DATA, DEMO_SERVICES } from '@/data/demoData'
+import { DEMO_SERVICES, DEMO_ONBOARDING_DATA } from '@/data/demoData'
 import type Anthropic from '@anthropic-ai/sdk'
 import type { BrandPersonality, BusinessCategory, ChatMessage, OfferingType, OnboardingStep, Service } from '@/types'
 import type { BusinessSearchResult } from '@/services/searchBusiness'
@@ -111,6 +111,7 @@ export interface OnCompleteData {
 export function useBasicsOnboarding(
   userName = 'there',
   onComplete?: (data: OnCompleteData) => void,
+  demoMode = false,
 ) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const stateRef = useRef(state)
@@ -122,6 +123,9 @@ export function useBasicsOnboarding(
   const hasStartedRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
+
+  // Tracks which step of the pre-scripted demo turn we're on
+  const demoStepRef = useRef(0)
 
   const handleToolCall = useCallback(async (block: Anthropic.ToolUseBlock): Promise<string> => {
     const input = block.input as Record<string, unknown>
@@ -215,10 +219,78 @@ export function useBasicsOnboarding(
     }
   }, [])
 
+  // Pre-scripted turn runner for demo mode — no LLM calls made
+  const runDemoTurn = useCallback(async (userText: string | null) => {
+    if (userText === null) return
+
+    const step = demoStepRef.current
+
+    if (step === 0) {
+      // User typed their business name or URL → mock search_business
+      demoStepRef.current = 1
+      dispatch({ type: 'SET_TYPING', value: true })
+      await delay(1200)
+
+      const msgId = makeId()
+      dispatch({
+        type: 'ADD_MESSAGE',
+        message: { id: msgId, role: 'assistant', content: `Looking up **${userText}**…`, timestamp: new Date() },
+      })
+      dispatch({ type: 'SET_TYPING', value: false })
+
+      const mockUrls: BusinessSearchResult[] = [
+        { title: 'Lumière Studio', url: 'https://lumierestudio.com', description: 'Premium hair salon in San Francisco' },
+      ]
+      dispatch({ type: 'SET_CANDIDATE_URLS', urls: mockUrls })
+      dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
+      dispatch({ type: 'SET_MESSAGE_WIDGET', id: msgId, widget: 'url_selector' })
+
+    } else if (step === 1) {
+      // User selected URL → mock submit_url with DEMO_ONBOARDING_DATA
+      demoStepRef.current = 2
+      dispatch({ type: 'SET_TYPING', value: true })
+      dispatch({ type: 'SET_STEP', step: 'extracting' })
+      await delay(1500)
+
+      const msgId = makeId()
+      dispatch({
+        type: 'ADD_MESSAGE',
+        message: {
+          id: msgId,
+          role: 'assistant',
+          content: 'I found **Lumière Studio** — a premium hair salon. Here are the services I pulled from your site:',
+          timestamp: new Date(),
+        },
+      })
+
+      dispatch({ type: 'SET_NAME', name: 'Lumière Studio' })
+      dispatch({ type: 'SET_CATEGORY', category: 'salon' })
+      dispatch({ type: 'SET_WEBSITE', url: 'https://lumierestudio.com' })
+      dispatch({ type: 'SET_SERVICES', services: DEMO_SERVICES })
+      dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(DEMO_SERVICES.map((s) => s.id)) })
+      dispatch({
+        type: 'SET_EXTRACTED_FIELDS',
+        offering_type: DEMO_ONBOARDING_DATA.offering_type,
+        industry: DEMO_ONBOARDING_DATA.industry,
+        brand_personality: DEMO_ONBOARDING_DATA.brand_personality,
+        services_and_products: DEMO_ONBOARDING_DATA.services_and_products,
+      })
+      dispatch({ type: 'SET_STEP', step: 'confirm_services' })
+      dispatch({ type: 'SET_TYPING', value: false })
+      dispatch({ type: 'SET_MESSAGE_WIDGET', id: msgId, widget: 'service_selector' })
+    }
+  }, [])
+
   const runLLMTurn = useCallback(async (
     userText: string | null,
     extraMessages?: Anthropic.MessageParam[],
   ) => {
+    // In demo mode, use pre-scripted responses instead of calling Claude
+    if (demoMode) {
+      await runDemoTurn(userText)
+      return
+    }
+
     const newLLMMessages = [...llmMessagesRef.current]
 
     if (extraMessages) {
@@ -317,7 +389,7 @@ export function useBasicsOnboarding(
         services_and_products: s.services_and_products ?? '',
       })
     }
-  }, [handleToolCall])
+  }, [demoMode, handleToolCall, runDemoTurn])
 
   const start = useCallback(() => {
     if (hasStartedRef.current) return
@@ -338,50 +410,6 @@ export function useBasicsOnboarding(
       ]
     }, 1200)
   }, [userName])
-
-  const startDemo = useCallback(async () => {
-    if (hasStartedRef.current) return
-    hasStartedRef.current = true
-    // Pre-load all demo data into state so confirmServices/continueToProgram read it
-    dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
-    dispatch({ type: 'SET_NAME', name: DEMO_ONBOARDING_DATA.business_name })
-    dispatch({ type: 'SET_WEBSITE', url: DEMO_ONBOARDING_DATA.website ?? '' })
-    dispatch({ type: 'SET_SERVICES', services: DEMO_SERVICES })
-    dispatch({ type: 'SET_SELECTED_IDS', ids: new Set(DEMO_SERVICES.map((s) => s.id)) })
-    dispatch({
-      type: 'SET_EXTRACTED_FIELDS',
-      offering_type: DEMO_ONBOARDING_DATA.offering_type,
-      industry: DEMO_ONBOARDING_DATA.industry,
-      brand_personality: DEMO_ONBOARDING_DATA.brand_personality,
-      services_and_products: DEMO_ONBOARDING_DATA.services_and_products,
-    })
-
-    // Play canned conversation
-    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: 'Hi there!', timestamp: new Date() } })
-    dispatch({ type: 'SET_TYPING', value: true })
-    await delay(1000)
-    dispatch({ type: 'SET_TYPING', value: false })
-    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'assistant', content: "I'm here to help you set up your loyalty program in just a few minutes. To get started, **what's your business name or website URL?**", timestamp: new Date() } })
-
-    await delay(900)
-    dispatch({ type: 'ADD_MESSAGE', message: { id: makeId(), role: 'user', content: 'luxestudio.com', timestamp: new Date() } })
-    dispatch({ type: 'SET_TYPING', value: true })
-    dispatch({ type: 'SET_STEP', step: 'extracting' })
-
-    await delay(1400)
-    dispatch({ type: 'SET_STEP', step: 'confirm_services' })
-    dispatch({ type: 'SET_TYPING', value: false })
-    dispatch({
-      type: 'ADD_MESSAGE',
-      message: {
-        id: makeId(),
-        role: 'assistant',
-        content: "I found **Luxe Studio** — a premium hair salon. Here are the services I pulled from your site:",
-        timestamp: new Date(),
-        widget: 'service_selector',
-      },
-    })
-  }, [])
 
   const handleUserInput = useCallback((value: string) => {
     dispatch({ type: 'ADD_MESSAGE', message: userMsg(value) })
@@ -429,7 +457,6 @@ export function useBasicsOnboarding(
   return {
     state,
     start,
-    startDemo,
     handleUserInput,
     selectUrl,
     confirmServices,

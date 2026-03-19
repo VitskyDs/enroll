@@ -9,7 +9,7 @@ import { ResourceListItem } from '@/components/resource/ResourceListItem'
 interface ServiceRow {
   id: string
   name: string
-  price: number | null
+  price_cents: number | null
   status: string
   category: string | null
   image_url: string | null
@@ -52,7 +52,7 @@ export default function ServicesPage() {
 
       const { data, error: svcErr } = await supabase
         .from('services')
-        .select('id, name, price, status, category, image_url')
+        .select('id, name, price_cents, status, category, image_url')
         .eq('business_id', business.id)
         .order('created_at', { ascending: true })
 
@@ -147,7 +147,7 @@ export default function ServicesPage() {
             key={svc.id}
             imageUrl={svc.image_url}
             title={svc.name}
-            subtitle={svc.price != null ? `$${Number(svc.price).toFixed(2)}` : '—'}
+            subtitle={svc.price_cents != null ? `$${(svc.price_cents / 100).toFixed(2)}` : '—'}
             badge={STATUS_BADGE[svc.status] ?? STATUS_BADGE.draft}
             onClick={() => navigate(`/services/${svc.id}`)}
           />
