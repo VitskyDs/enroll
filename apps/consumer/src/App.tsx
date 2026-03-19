@@ -13,7 +13,7 @@ import JoinPage from '@/pages/JoinPage'
 export default function App() {
   return (
     <Routes>
-      <Route index element={<Navigate to="/refer" replace />} />
+      <Route index element={<Navigate to="/dashboard" replace />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/dashboard" element={<DashboardPage />}>
         <Route path="service/:id" element={<ServiceDrawerPage />} />

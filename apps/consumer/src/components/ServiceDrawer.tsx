@@ -6,6 +6,8 @@ interface ServiceDrawerProps {
   open: boolean
   service: ConsumerService | null
   program: ConsumerLoyaltyProgram | null
+  isEnrolled?: boolean
+  onEnrollRequired?: () => void
   onClose: () => void
 }
 
@@ -30,7 +32,13 @@ function formatEarnedPoints(program: ConsumerLoyaltyProgram | null): string {
   return 'Loyalty points'
 }
 
-export default function ServiceDrawer({ open, service, program, onClose }: ServiceDrawerProps) {
+export default function ServiceDrawer({ open, service, program, isEnrolled, onEnrollRequired, onClose }: ServiceDrawerProps) {
+  function handleCta() {
+    if (!isEnrolled) {
+      onClose()
+      onEnrollRequired?.()
+    }
+  }
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
       <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 pb-12">
@@ -81,12 +89,16 @@ export default function ServiceDrawer({ open, service, program, onClose }: Servi
             {/* CTA buttons */}
             <div className="flex flex-col gap-3 px-4 pt-2">
               {service.subscription_price_cents != null && (
-                <button className="bg-[#171717] text-white text-sm font-medium rounded-lg h-9 w-full flex items-center justify-center">
+                <button
+                  onClick={handleCta}
+                  className="bg-[#171717] text-white text-sm font-medium rounded-lg h-9 w-full flex items-center justify-center">
                   Subscribe and save {formatPrice(service.subscription_price_cents)}/month
                 </button>
               )}
               {service.price_cents != null && (
-                <button className="bg-[#f5f5f5] text-[#171717] text-sm font-medium rounded-lg h-9 w-full flex items-center justify-center">
+                <button
+                  onClick={handleCta}
+                  className="bg-[#f5f5f5] text-[#171717] text-sm font-medium rounded-lg h-9 w-full flex items-center justify-center">
                   Buy once {formatPrice(service.price_cents)}
                 </button>
               )}
