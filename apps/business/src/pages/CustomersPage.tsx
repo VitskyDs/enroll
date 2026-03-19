@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import { ResourceScreen } from '@/components/resource/ResourceScreen'
 import { useDemoMode } from '@/hooks/useDemoMode'
+import { useAuth } from '@/contexts/AuthContext'
 import { DEMO_CUSTOMERS } from '@/data/demoData'
 
 interface CustomerRow {
@@ -60,6 +61,7 @@ function CustomerItem({ customer, onClick }: { customer: CustomerRow; onClick?: 
 export default function CustomersPage() {
   const navigate = useNavigate()
   const demoMode = useDemoMode()
+  const { user } = useAuth()
   const [customers, setCustomers] = useState<CustomerRow[]>(demoMode ? DEMO_CUSTOMERS : [])
   const [isLoading, setIsLoading] = useState(!demoMode)
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +69,7 @@ export default function CustomersPage() {
   const [filter, setFilter] = useState<FilterTab>('all')
 
   useEffect(() => {
-    if (demoMode) return
+    if (demoMode || !user) return
     async function load() {
       setIsLoading(true)
       setError(null)
@@ -75,9 +77,8 @@ export default function CustomersPage() {
       const { data: business, error: bizErr } = await supabase
         .from('businesses')
         .select('id, loyalty_program_id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+        .eq('owner_id', user.id)
+        .maybeSingle()
 
       if (bizErr || !business) {
         setError('Could not load customers.')
@@ -106,7 +107,7 @@ export default function CustomersPage() {
     }
 
     load()
-  }, [demoMode])
+  }, [demoMode, user])
 
   const filteredCustomers = useMemo(() => {
     return customers
