@@ -9,11 +9,13 @@ import TrackReferralsPage from '@/pages/TrackReferralsPage'
 import LoyaltyProgramPage from '@/pages/LoyaltyProgramPage'
 import ProfilePage from '@/pages/ProfilePage'
 import JoinPage from '@/pages/JoinPage'
+import AuthCallbackPage from '@/pages/AuthCallbackPage'
 
 export default function App() {
   return (
     <Routes>
       <Route index element={<Navigate to="/dashboard" replace />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/dashboard" element={<DashboardPage />}>
         <Route path="service/:id" element={<ServiceDrawerPage />} />

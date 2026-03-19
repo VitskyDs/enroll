@@ -73,6 +73,7 @@ export default function PreferencesPage() {
       step={state.step}
       onSend={() => undefined}
       onBack={() => navigate('/onboarding')}
+      onExit={() => navigate('/')}
       renderWidget={renderWidget}
       title="Program inputs"
       subtitle="Three quick questions to match you with the right loyalty program."

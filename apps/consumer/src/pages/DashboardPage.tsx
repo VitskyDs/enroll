@@ -114,10 +114,13 @@ export default function DashboardPage() {
   }
 
   async function handleGoogleEnroll() {
-    const redirectTo = window.location.href
+    const resolvedBusinessId = businessId ?? business?.id
+    if (resolvedBusinessId) {
+      sessionStorage.setItem('enroll_business_id', resolvedBusinessId)
+    }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 

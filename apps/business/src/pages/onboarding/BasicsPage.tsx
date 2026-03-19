@@ -52,27 +52,10 @@ export default function BasicsPage() {
         />
       )
     }
-    if (message.widget === 'service_actions') {
-      return (
-        <div className="flex flex-col gap-2 w-full">
-          <button
-            onClick={continueToProgram}
-            className="w-full h-10 rounded-lg bg-zinc-900 text-white text-sm font-medium"
-          >
-            Continue
-          </button>
-          <button
-            onClick={() => navigate('/onboarding')}
-            className="w-full h-10 rounded-lg bg-zinc-100 text-zinc-900 text-sm font-medium"
-          >
-            Start over
-          </button>
-          <p className="text-sm text-zinc-500 text-center">You can change these anytime</p>
-        </div>
-      )
-    }
     return null
   }
+
+  const showServiceActions = state.messages.some(m => m.widget === 'service_actions')
 
   return (
     <ChatShell
@@ -81,11 +64,29 @@ export default function BasicsPage() {
       step={state.step}
       onSend={handleUserInput}
       onBack={() => navigate('/')}
+      onExit={() => navigate('/')}
       renderWidget={renderWidget}
       title="Your business"
       subtitle="Tell me about your business and I'll pull in your services automatically."
       inputEnabled={INPUT_STEPS.includes(state.step)}
       hint={hint}
+      footerContent={showServiceActions ? (
+        <>
+          <button
+            onClick={continueToProgram}
+            className="w-full h-12 rounded-xl bg-zinc-900 text-white text-base font-medium"
+          >
+            Continue
+          </button>
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="w-full h-10 rounded-xl bg-zinc-100 text-zinc-700 text-sm font-medium"
+          >
+            Start over
+          </button>
+          <p className="text-sm text-zinc-500 text-center">You can change these anytime</p>
+        </>
+      ) : undefined}
     />
   )
 }
