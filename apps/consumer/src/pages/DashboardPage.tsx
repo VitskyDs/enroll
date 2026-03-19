@@ -8,6 +8,7 @@ import { useLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
 import { formatRefereeReward } from '@/lib/referral'
 import { cn } from '@/lib/utils'
 import EnrollmentDrawer from '@/components/EnrollmentDrawer'
+import EnrollPromptDrawer from '@/components/EnrollPromptDrawer'
 import ServiceDrawer from '@/components/ServiceDrawer'
 import ServiceCard from '@/components/ServiceCard'
 import BottomNav from '@/components/BottomNav'
@@ -34,6 +35,8 @@ export default function DashboardPage() {
   const { program } = useLoyaltyProgram(businessId ?? business?.id)
 
   const [selectedService, setSelectedService] = useState<ConsumerService | null>(null)
+  const [logoError, setLogoError] = useState(false)
+  const [showEnrollPrompt, setShowEnrollPrompt] = useState(false)
   const [showEnrollmentDrawer, setShowEnrollmentDrawer] = useState(false)
   const [enrolledCustomer, setEnrolledCustomer] = useState<EnrolledCustomer | null>(null)
 
@@ -106,7 +109,11 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe()
   }, [businessId, business?.id])
 
-  async function handleEnroll() {
+  function handleEnroll() {
+    setShowEnrollPrompt(true)
+  }
+
+  async function handleGoogleEnroll() {
     const redirectTo = window.location.href
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -133,31 +140,39 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-y-auto">
 
         {/* ── Header — cover image + logo ──────────────────────────── */}
-        <div className="relative pb-[28px] px-4 pt-[64px]">
-          {/* Cover image */}
-          <div className="relative rounded-lg h-[165px] w-full overflow-hidden bg-[#f5f5f5]">
-            {business?.cover_image_url && (
+        <div className={cn('relative px-4', business?.cover_image_url ? 'pb-[28px] pt-[64px]' : 'pt-4')}>
+          {/* Cover image — only shown when URL exists */}
+          {business?.cover_image_url && (
+            <div className="relative rounded-lg h-[165px] w-full overflow-hidden bg-[#f5f5f5]">
               <img
                 src={business.cover_image_url}
                 alt={business.name}
                 className="absolute inset-0 w-full h-full object-cover"
               />
-            )}
-            {/* Gallery pill */}
-            <button className="absolute bottom-3 right-3 z-10 bg-[#f5f5f5] rounded-lg flex items-center gap-1.5 px-2 py-1">
-              <Images size={12} className="text-[#171717]" />
-              <span className="text-xs font-medium text-[#171717]">Gallery</span>
-            </button>
-          </div>
-          {/* Logo circle — overlaps cover */}
-          <div className="absolute bottom-0 left-8 size-[64px] rounded-full bg-white border border-[#e5e5e5] shadow-sm overflow-hidden">
-            {business?.logo_url && (
+              {/* Gallery pill */}
+              <button className="absolute bottom-3 right-3 z-10 bg-[#f5f5f5] rounded-lg flex items-center gap-1.5 px-2 py-1">
+                <Images size={12} className="text-[#171717]" />
+                <span className="text-xs font-medium text-[#171717]">Gallery</span>
+              </button>
+            </div>
+          )}
+          {/* Logo circle — overlaps cover when cover exists, inline otherwise */}
+          <div className={cn(
+            'size-[64px] rounded-full bg-white border border-[#e5e5e5] shadow-sm overflow-hidden flex items-center justify-center',
+            business?.cover_image_url ? 'absolute bottom-0 left-8' : 'mt-2'
+          )}>
+            {business?.logo_url && !logoError ? (
               <img
                 src={business.logo_url}
                 alt={business.name}
                 className="w-full h-full object-cover"
+                onError={() => setLogoError(true)}
               />
-            )}
+            ) : business?.name ? (
+              <span className="text-[18px] font-semibold text-[#404040] leading-none select-none">
+                {business.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -288,8 +303,21 @@ export default function DashboardPage() {
         open={!!selectedService}
         service={selectedService}
         program={program}
+        isEnrolled={isEnrolled}
+        onEnrollRequired={() => { setSelectedService(null); setShowEnrollPrompt(true) }}
         onClose={() => setSelectedService(null)}
       />
+
+      {/* ── Pre-enrollment prompt drawer ─────────────────────────── */}
+      {business && (
+        <EnrollPromptDrawer
+          open={showEnrollPrompt && !isEnrolled}
+          business={business}
+          program={program}
+          onClose={() => setShowEnrollPrompt(false)}
+          onGoogleEnroll={handleGoogleEnroll}
+        />
+      )}
 
       {/* ── Enrollment confirmation drawer ───────────────────────── */}
       {business && enrolledCustomer && (
