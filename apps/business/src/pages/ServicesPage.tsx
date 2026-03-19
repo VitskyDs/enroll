@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { ResourceScreen } from '@/components/resource/ResourceScreen'
 import { ResourceListItem } from '@/components/resource/ResourceListItem'
 import { useDemoMode } from '@/hooks/useDemoMode'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ServiceRow {
   id: string
@@ -34,6 +35,7 @@ const DEMO_SERVICE_ROWS: ServiceRow[] = [
 export default function ServicesPage() {
   const navigate = useNavigate()
   const demoMode = useDemoMode()
+  const { user } = useAuth()
   const [services, setServices] = useState<ServiceRow[]>(demoMode ? DEMO_SERVICE_ROWS : [])
   const [isLoading, setIsLoading] = useState(!demoMode)
   const [error, setError] = useState<string | null>(null)
@@ -41,7 +43,7 @@ export default function ServicesPage() {
   const [filter, setFilter] = useState<FilterTab>('all')
 
   useEffect(() => {
-    if (demoMode) return
+    if (demoMode || !user) return
     async function load() {
       setIsLoading(true)
       setError(null)
@@ -49,9 +51,8 @@ export default function ServicesPage() {
       const { data: business, error: bizErr } = await supabase
         .from('businesses')
         .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+        .eq('owner_id', user.id)
+        .maybeSingle()
 
       if (bizErr || !business) {
         setError('Could not load services.')
@@ -75,7 +76,7 @@ export default function ServicesPage() {
     }
 
     load()
-  }, [demoMode])
+  }, [demoMode, user])
 
   const filteredServices = useMemo(() => {
     return services
