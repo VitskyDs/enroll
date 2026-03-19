@@ -6,9 +6,11 @@ export function ProtectedRoute() {
   const location = useLocation()
 
   // Dev-only: allow demo flow through without auth
-  if (import.meta.env.DEV && (location.state as { demo?: boolean } | null)?.demo === true) {
-    return <Outlet />
-  }
+  const isDemoMode = import.meta.env.DEV && (
+    (location.state as { demo?: boolean } | null)?.demo === true ||
+    sessionStorage.getItem('enroll_demo_mode') === 'true'
+  )
+  if (isDemoMode) return <Outlet />
 
   if (loading) return null
 

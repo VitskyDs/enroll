@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -9,7 +9,6 @@ import { saveToSupabase } from '@/services/saveToSupabase'
 import { PROGRAM_TYPE_LABELS } from '@/services/recommendProgram'
 import type { BusinessOnboardingData, LoyaltyProgram, ProgramRecommendation, Service } from '@/types'
 import { DEMO_PROGRAM, DEMO_ONBOARDING_DATA, DEMO_RECOMMENDATION } from '@/data/demoData'
-import { devSeed } from '@/dev/devSeed'
 
 // ---------------------------------------------------------------------------
 // Location state
@@ -213,21 +212,10 @@ export default function ProgramPreviewPage() {
   )
   const demoMode = state?.demo === true
   const savedRef = useRef(false)
-  const [doneLoading, setDoneLoading] = useState(false)
-  const [doneError, setDoneError] = useState<string | null>(null)
 
-  async function handleDone() {
+  function handleDone() {
     if (demoMode) {
-      const password = import.meta.env.VITE_DEV_USER_PASSWORD
-      if (!password) { setDoneError('Set VITE_DEV_USER_PASSWORD in .env.local'); return }
-      setDoneLoading(true)
-      try {
-        await devSeed(password)
-        window.location.href = '/dashboard'
-      } catch (e) {
-        setDoneError(e instanceof Error ? e.message : 'Failed')
-        setDoneLoading(false)
-      }
+      navigate('/dashboard', { state: { demo: true } })
       return
     }
     navigate('/dashboard')
@@ -527,13 +515,11 @@ export default function ProgramPreviewPage() {
 
       {/* ── Pinned footer ── */}
       <div className="bg-white px-4 pt-3 pb-6 flex flex-col gap-2 shrink-0">
-        {doneError && <p className="text-xs text-red-500 text-center">{doneError}</p>}
         <button
           onClick={handleDone}
-          disabled={doneLoading}
-          className="w-full h-10 rounded-lg bg-zinc-900 text-white text-sm font-medium disabled:opacity-50"
+          className="w-full h-10 rounded-lg bg-zinc-900 text-white text-sm font-medium"
         >
-          {doneLoading ? 'Setting up…' : 'Done'}
+          Done
         </button>
         <button
           onClick={() => navigate('/onboarding')}

@@ -4,6 +4,9 @@
  */
 import type { BusinessOnboardingData, LoyaltyProgram, ProgramRecommendation, Service } from '@/types'
 
+export const DEMO_BUSINESS_NAME = 'Lumière Studio'
+export const DEMO_BUSINESS_SLUG = 'lumiere-studio'
+
 export const DEMO_SERVICES: Service[] = [
   { id: 'demo-1', name: 'Signature cut & style', price_cents: 8500, duration_minutes: 60, category: 'Haircut', subscription_price_cents: null },
   { id: 'demo-2', name: 'Full color & highlights', price_cents: 18000, duration_minutes: 150, category: 'Color', subscription_price_cents: null },
@@ -28,6 +31,15 @@ export const DEMO_ONBOARDING_DATA: BusinessOnboardingData & { services: Service[
   spend_variance: 'varied',
   services: DEMO_SERVICES,
 }
+
+export const DEMO_CUSTOMERS = [
+  { id: 'demo-cu1', name: 'Emma Johnson',    joined_at: '2025-10-18T10:00:00Z', tier: 'Pearl',   points: 450,  total_spend: 35000,  status: 'active' },
+  { id: 'demo-cu2', name: 'Marcus Chen',     joined_at: '2025-09-18T10:00:00Z', tier: 'Gold',    points: 1240, total_spend: 82000,  status: 'active' },
+  { id: 'demo-cu3', name: 'Sofia Rodriguez', joined_at: '2025-08-18T10:00:00Z', tier: 'Diamond', points: 2100, total_spend: 154000, status: 'active' },
+  { id: 'demo-cu4', name: 'James Kim',       joined_at: '2025-11-18T10:00:00Z', tier: 'Pearl',   points: 50,   total_spend: 4500,   status: 'inactive' },
+  { id: 'demo-cu5', name: 'Priya Nair',      joined_at: '2025-07-18T10:00:00Z', tier: 'Gold',    points: 680,  total_spend: 54000,  status: 'active' },
+  { id: 'demo-cu6', name: 'Daniel Torres',   joined_at: '2025-12-18T10:00:00Z', tier: 'Pearl',   points: 90,   total_spend: 8500,   status: 'active' },
+]
 
 export const DEMO_RECOMMENDATION: ProgramRecommendation = {
   program_type: 'points_tiers',

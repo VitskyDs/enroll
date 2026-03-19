@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { devSeed } from '@/dev/devSeed'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -18,28 +17,12 @@ export default function LandingPage() {
     })
   }
 
-  const [jumping, setJumping] = useState(false)
-
   function goToDemo() {
     navigate('/onboarding', { state: { demo: true } })
   }
 
-  async function jumpToDashboard() {
-    const password = import.meta.env.VITE_DEV_USER_PASSWORD
-    if (!password) {
-      setError('Set VITE_DEV_USER_PASSWORD in .env.local')
-      return
-    }
-    setError(null)
-    setJumping(true)
-    try {
-      await devSeed(password)
-      window.location.href = '/dashboard'
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to jump to dashboard')
-    } finally {
-      setJumping(false)
-    }
+  function jumpToDashboard() {
+    navigate('/dashboard', { state: { demo: true } })
   }
 
   return (
@@ -93,10 +76,9 @@ export default function LandingPage() {
               </button>
               <button
                 onClick={jumpToDashboard}
-                disabled={jumping}
-                className="text-xs text-zinc-400 underline underline-offset-2 text-center disabled:opacity-50"
+                className="text-xs text-zinc-400 underline underline-offset-2 text-center"
               >
-                {jumping ? 'setting up…' : 'dev: jump to dashboard'}
+                dev: jump to dashboard
               </button>
             </div>
           )}

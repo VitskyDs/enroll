@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
+import { useDemoMode } from '@/hooks/useDemoMode'
+import { DEMO_PROGRAM } from '@/data/demoData'
 import type { LoyaltyProgram } from '@/types'
 
 type FeatureKey = 'earn-rules' | 'reward-tiers' | 'bonus-rules' | 'referral' | 'brand-voice'
@@ -50,11 +52,13 @@ const ROWS: { key: FeatureKey; label: string }[] = [
 ]
 
 export default function ProgramPage() {
-  const [program, setProgram] = useState<LoyaltyProgram | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const demoMode = useDemoMode()
+  const [program, setProgram] = useState<LoyaltyProgram | null>(demoMode ? DEMO_PROGRAM : null)
+  const [isLoading, setIsLoading] = useState(!demoMode)
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (demoMode) return
     supabase
       .from('loyalty_programs')
       .select('*')
@@ -64,7 +68,7 @@ export default function ProgramPage() {
         if (data) setProgram(data as LoyaltyProgram)
         setIsLoading(false)
       })
-  }, [])
+  }, [demoMode])
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">

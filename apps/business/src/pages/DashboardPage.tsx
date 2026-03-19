@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { Bell, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useDemoMode } from '@/hooks/useDemoMode'
 import { BottomNav } from '@/components/BottomNav'
 import { Row } from '@/components/ChecklistRow'
-import { InviteDrawer } from '@/components/InviteDrawer'
+import { DEMO_BUSINESS_NAME } from '@/data/demoData'
+import type { AppShellContext } from '@/components/AppShell'
 
 const CHECKLIST_ITEMS = [
   { label: 'Invite your first customers', description: 'Share your loyalty link' },
@@ -18,27 +20,23 @@ const CHECKLIST_ITEMS = [
 export default function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [businessName, setBusinessName] = useState<string>('Your business')
+  const demoMode = useDemoMode()
+  const { openInvite } = useOutletContext<AppShellContext>()
+  const [businessName, setBusinessName] = useState<string>(demoMode ? DEMO_BUSINESS_NAME : 'Your business')
   const [businessId, setBusinessId] = useState<string | null>(null)
-  const [inviteUrl, setInviteUrl] = useState<string>('')
-  const [inviteOpen, setInviteOpen] = useState(false)
 
   useEffect(() => {
-    if (!user) return
+    if (demoMode || !user) return
     supabase
       .from('businesses')
-      .select('id, name, slug')
+      .select('id, name')
       .eq('owner_id', user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (data?.id) setBusinessId(data.id)
         if (data?.name) setBusinessName(data.name)
-        if (data?.slug) {
-          const consumerBase = import.meta.env.VITE_CONSUMER_URL ?? window.location.origin
-          setInviteUrl(`${consumerBase}/join/${data.slug}`)
-        }
       })
-  }, [user])
+  }, [user, demoMode])
 
   return (
     <div className="relative flex flex-col h-screen overflow-hidden bg-white">
@@ -72,7 +70,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <button
-            onClick={() => setInviteOpen(true)}
+            onClick={openInvite}
             className="w-full h-10 bg-zinc-900 text-white text-sm font-medium rounded-lg"
           >
             Invite customers
@@ -113,7 +111,6 @@ export default function DashboardPage() {
         <button
           onClick={async () => {
             if (!businessId) return
-            // Clear loyalty_program_id FK first to avoid circular reference
             await supabase.from('businesses').update({ loyalty_program_id: null }).eq('id', businessId)
             await supabase.from('loyalty_programs').delete().eq('business_id', businessId)
             await supabase.from('services').delete().eq('business_id', businessId)
@@ -126,14 +123,7 @@ export default function DashboardPage() {
         </button>
       )}
 
-      <BottomNav active="home" onShare={() => setInviteOpen(true)} />
-
-      <InviteDrawer
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        businessName={businessName}
-        inviteUrl={inviteUrl}
-      />
+      <BottomNav active="home" onShare={openInvite} />
     </div>
   )
 }

@@ -29,18 +29,25 @@ export function SidebarNav({ active, onShare }: Props) {
       <SettingsOverlay open={settingsOpen} onClose={() => setSettingsOpen(false)} onInvite={onShare} />
 
       <nav className="flex flex-col gap-1 flex-1 pt-4">
-        {NAV_ITEMS.map(({ key, label, icon: Icon, route }) => (
-          <Button
-            key={key}
-            variant="ghost"
-            disabled={route === null}
-            className={`justify-start gap-3 h-9 px-3 font-normal ${active === key ? 'bg-zinc-100 hover:bg-zinc-100' : ''} ${route === null ? 'opacity-40 cursor-default' : ''}`}
-            onClick={() => { if (route) navigate(route) }}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            {label}
-          </Button>
-        ))}
+        {NAV_ITEMS.map(({ key, label, icon: Icon, route }) => {
+          const isInvite = key === 'invite'
+          const isDisabled = route === null && !isInvite
+          return (
+            <Button
+              key={key}
+              variant="ghost"
+              disabled={isDisabled}
+              className={`justify-start gap-3 h-9 px-3 font-normal ${active === key ? 'bg-zinc-100 hover:bg-zinc-100' : ''} ${isDisabled ? 'opacity-40 cursor-default' : ''}`}
+              onClick={() => {
+                if (isInvite) { onShare?.(); return }
+                if (route) navigate(route)
+              }}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </Button>
+          )
+        })}
       </nav>
 
       <div className="pb-4 border-t border-zinc-100 pt-3">

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import { ResourceScreen } from '@/components/resource/ResourceScreen'
 import { ResourceListItem } from '@/components/resource/ResourceListItem'
+import { useDemoMode } from '@/hooks/useDemoMode'
 
 interface ServiceRow {
   id: string
@@ -23,20 +24,28 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
   inactive: { label: 'Inactive', color: '#737373' },
 }
 
+const DEMO_SERVICE_ROWS: ServiceRow[] = [
+  { id: 'demo-1', name: 'Signature cut & style',       price_cents: 8500,  status: 'active', category: 'Haircut',   image_url: null },
+  { id: 'demo-2', name: 'Full color & highlights',      price_cents: 18000, status: 'active', category: 'Color',     image_url: null },
+  { id: 'demo-3', name: 'Blowout & finish',             price_cents: 5500,  status: 'active', category: 'Styling',   image_url: null },
+  { id: 'demo-4', name: 'Deep conditioning treatment',  price_cents: 4500,  status: 'draft',  category: 'Treatment', image_url: null },
+]
+
 export default function ServicesPage() {
   const navigate = useNavigate()
-  const [services, setServices] = useState<ServiceRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const demoMode = useDemoMode()
+  const [services, setServices] = useState<ServiceRow[]>(demoMode ? DEMO_SERVICE_ROWS : [])
+  const [isLoading, setIsLoading] = useState(!demoMode)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterTab>('all')
 
   useEffect(() => {
+    if (demoMode) return
     async function load() {
       setIsLoading(true)
       setError(null)
 
-      // Get current business
       const { data: business, error: bizErr } = await supabase
         .from('businesses')
         .select('id')
@@ -66,7 +75,7 @@ export default function ServicesPage() {
     }
 
     load()
-  }, [])
+  }, [demoMode])
 
   const filteredServices = useMemo(() => {
     return services

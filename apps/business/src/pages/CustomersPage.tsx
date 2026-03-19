@@ -4,6 +4,8 @@ import { Search, ArrowUpDown, ListFilter, UsersRound } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { BottomNav } from '@/components/BottomNav'
 import { ResourceScreen } from '@/components/resource/ResourceScreen'
+import { useDemoMode } from '@/hooks/useDemoMode'
+import { DEMO_CUSTOMERS } from '@/data/demoData'
 
 interface CustomerRow {
   id: string
@@ -57,13 +59,15 @@ function CustomerItem({ customer, onClick }: { customer: CustomerRow; onClick?: 
 
 export default function CustomersPage() {
   const navigate = useNavigate()
-  const [customers, setCustomers] = useState<CustomerRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const demoMode = useDemoMode()
+  const [customers, setCustomers] = useState<CustomerRow[]>(demoMode ? DEMO_CUSTOMERS : [])
+  const [isLoading, setIsLoading] = useState(!demoMode)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterTab>('all')
 
   useEffect(() => {
+    if (demoMode) return
     async function load() {
       setIsLoading(true)
       setError(null)
@@ -102,7 +106,7 @@ export default function CustomersPage() {
     }
 
     load()
-  }, [])
+  }, [demoMode])
 
   const filteredCustomers = useMemo(() => {
     return customers
