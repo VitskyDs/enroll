@@ -107,7 +107,7 @@ export default function ServiceFormPage() {
       const [{ data: row, error }, { data: imgs }] = await Promise.all([
         supabase
           .from('services')
-          .select('id, name, status, description, category, price, subscription_price, note')
+          .select('id, name, status, description, category, price_cents, subscription_price, note')
           .eq('id', id)
           .single(),
         supabase
@@ -123,7 +123,7 @@ export default function ServiceFormPage() {
           status: row.status === 'draft' ? 'draft' : row.status === 'inactive' ? 'inactive' : 'active',
           description: row.description ?? '',
           category: row.category ?? '',
-          price: row.price != null ? String(row.price) : '',
+          price: row.price_cents != null ? String(row.price_cents / 100) : '',
           subscriptionPrice: row.subscription_price != null ? String(row.subscription_price) : '',
           note: row.note ?? '',
         })
@@ -174,7 +174,6 @@ export default function ServiceFormPage() {
           description: description || null,
           status: data.status,
           category: data.category || null,
-          price: priceVal,
           price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
           subscription_price: subPriceVal,
           note: data.note || null,
@@ -205,7 +204,6 @@ export default function ServiceFormPage() {
     const priceVal = price ? parseFloat(price) : null
     const subPriceVal = subscriptionPrice ? parseFloat(subscriptionPrice) : null
     const ok = await updateService({
-      price: priceVal,
       price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
       subscription_price: subPriceVal,
     })
@@ -285,7 +283,6 @@ export default function ServiceFormPage() {
       status: data.status,
       description: data.description || null,
       category: data.category || null,
-      price: priceVal,
       price_cents: priceVal != null ? Math.round(priceVal * 100) : null,
       subscription_price: subPriceVal,
       note: data.note || null,
