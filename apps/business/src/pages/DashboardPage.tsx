@@ -23,8 +23,6 @@ export default function DashboardPage() {
   const demoMode = useDemoMode()
   const { openInvite } = useOutletContext<AppShellContext>()
   const [businessName, setBusinessName] = useState<string>(demoMode ? DEMO_BUSINESS_NAME : 'Your business')
-  const [businessId, setBusinessId] = useState<string | null>(null)
-
   useEffect(() => {
     if (demoMode || !user) return
     supabase
@@ -33,7 +31,6 @@ export default function DashboardPage() {
       .eq('owner_id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.id) setBusinessId(data.id)
         if (data?.name) setBusinessName(data.name)
       })
   }, [user, demoMode])

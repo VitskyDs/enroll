@@ -77,7 +77,7 @@ export default function CustomersPage() {
       const { data: business, error: bizErr } = await supabase
         .from('businesses')
         .select('id, loyalty_program_id')
-        .eq('owner_id', user.id)
+        .eq('owner_id', user!.id)
         .maybeSingle()
 
       if (bizErr || !business) {

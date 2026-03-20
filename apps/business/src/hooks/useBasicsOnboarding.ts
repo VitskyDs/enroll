@@ -239,7 +239,7 @@ export function useBasicsOnboarding(
       dispatch({ type: 'SET_TYPING', value: false })
 
       const mockUrls: BusinessSearchResult[] = [
-        { title: 'Lumière Studio', url: 'https://lumierestudio.com', description: 'Premium hair salon in San Francisco' },
+        { title: 'Lumière Studio', url: 'https://lumierestudio.com', snippet: 'Premium hair salon in San Francisco' },
       ]
       dispatch({ type: 'SET_CANDIDATE_URLS', urls: mockUrls })
       dispatch({ type: 'SET_STEP', step: 'collect_url_or_name' })
