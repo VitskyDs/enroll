@@ -1,7 +1,8 @@
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { BadgeCheck } from 'lucide-react'
 import type { ConsumerBusiness } from '@/hooks/useBusiness'
 import type { ConsumerLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
-import { Drawer, DrawerContent } from '@/components/ui/drawer'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 
 interface EnrollPromptDrawerProps {
   open: boolean
@@ -46,7 +47,8 @@ export default function EnrollPromptDrawer({
 
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-      <DrawerContent className="border-0 px-6 pb-12 pt-6 gap-6">
+      <DrawerContent className="border-0 px-6 pb-12 pt-6 gap-6" aria-describedby={undefined}>
+        <VisuallyHidden><DrawerTitle>Enroll to {business.name}</DrawerTitle></VisuallyHidden>
 
         {/* Cover image */}
         {business.cover_image_url ? (

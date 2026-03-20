@@ -1,6 +1,7 @@
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import type { ConsumerService } from '@/hooks/useServices'
 import type { ConsumerLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
-import { Drawer, DrawerContent } from '@/components/ui/drawer'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 
 interface ServiceDrawerProps {
   open: boolean
@@ -55,7 +56,8 @@ export default function ServiceDrawer({ open, service, program, isEnrolled, onEn
 
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-      <DrawerContent className="border-0 pb-12">
+      <DrawerContent className="border-0 pb-12" aria-describedby={undefined}>
+        <VisuallyHidden><DrawerTitle>{service?.name ?? 'Service'}</DrawerTitle></VisuallyHidden>
 
         {/* Service image */}
         <div className="px-4 pt-4">

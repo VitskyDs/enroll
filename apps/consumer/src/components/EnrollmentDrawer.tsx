@@ -1,8 +1,9 @@
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useNavigate } from 'react-router-dom'
 import { BadgeCheck, ChevronRight } from 'lucide-react'
 import type { ConsumerBusiness } from '@/hooks/useBusiness'
 import type { ConsumerLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
-import { Drawer, DrawerContent } from '@/components/ui/drawer'
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 
 interface Customer {
   points: number
@@ -78,7 +79,8 @@ export default function EnrollmentDrawer({ open, business, program, customer, on
 
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-      <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 px-6 pb-6 gap-6">
+      <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 px-6 pb-6 gap-6" aria-describedby={undefined}>
+        <VisuallyHidden><DrawerTitle>Welcome to {business.name}</DrawerTitle></VisuallyHidden>
         {/* Image placeholder */}
         <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0 mt-2" />
 
