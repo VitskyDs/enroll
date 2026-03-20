@@ -109,14 +109,7 @@ export default function DashboardPage() {
 
       {import.meta.env.DEV && (
         <button
-          onClick={async () => {
-            if (!businessId) return
-            await supabase.from('businesses').update({ loyalty_program_id: null }).eq('id', businessId)
-            await supabase.from('loyalty_programs').delete().eq('business_id', businessId)
-            await supabase.from('services').delete().eq('business_id', businessId)
-            await supabase.from('businesses').delete().eq('id', businessId)
-            navigate('/onboarding')
-          }}
+          onClick={() => navigate('/onboarding')}
           className="absolute bottom-24 left-1/2 -translate-x-1/2 text-xs text-zinc-400 underline underline-offset-2 whitespace-nowrap"
         >
           dev: reset onboarding
