@@ -10,7 +10,7 @@ export default function AuthCallbackPage() {
       const { data: { session }, error } = await supabase.auth.getSession()
 
       if (error || !session) {
-        navigate('/refer', { replace: true })
+        navigate('/dashboard', { replace: true })
         return
       }
 
@@ -20,7 +20,7 @@ export default function AuthCallbackPage() {
       if (businessId) {
         navigate(`/dashboard?business=${businessId}`, { replace: true })
       } else {
-        navigate('/refer', { replace: true })
+        navigate('/dashboard', { replace: true })
       }
     }
 

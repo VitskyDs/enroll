@@ -11,6 +11,17 @@ export interface ConsumerService {
   image_url: string | null
 }
 
+interface ServiceRow {
+  id: string
+  name: string
+  description: string | null
+  price_cents: number | null
+  subscription_price_cents: number | null
+  duration_minutes: number | null
+  image_url: string | null
+  service_images: { url: string; sort_order: number }[]
+}
+
 interface UseServicesResult {
   services: ConsumerService[]
   loading: boolean
@@ -41,7 +52,7 @@ export function useServices(businessId?: string): UseServicesResult {
 
       const { data, error: err } = await supabase
         .from('services')
-        .select('id, name, description, price_cents, subscription_price_cents, duration_minutes, image_url')
+        .select('id, name, description, price_cents, subscription_price_cents, duration_minutes, image_url, service_images(url, sort_order)')
         .eq('business_id', businessId)
         .neq('status', 'archived')
         .order('created_at', { ascending: true })
@@ -50,7 +61,22 @@ export function useServices(businessId?: string): UseServicesResult {
       if (err) {
         setError(err.message)
       } else {
-        setServices((data ?? []) as ConsumerService[])
+        const mapped: ConsumerService[] = (data ?? []).map((row) => {
+          const r = row as unknown as ServiceRow
+          const primaryImage = r.image_url
+            ?? r.service_images?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url
+            ?? null
+          return {
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            price_cents: r.price_cents,
+            subscription_price_cents: r.subscription_price_cents,
+            duration_minutes: r.duration_minutes,
+            image_url: primaryImage,
+          }
+        })
+        setServices(mapped)
       }
       setLoading(false)
     }
