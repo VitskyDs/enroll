@@ -12,7 +12,11 @@ export function ProtectedRoute() {
   )
   if (isDemoMode) return <Outlet />
 
-  if (loading) return null
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-800" />
+    </div>
+  )
 
   if (!user) return <Navigate to="/" replace />
 
