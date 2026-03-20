@@ -42,20 +42,30 @@ export default function EnrollPromptDrawer({
   onGoogleEnroll,
 }: EnrollPromptDrawerProps) {
   const joinPoints = getJoinPoints(program)
+  const currencyName = program?.currency_name ?? 'points'
 
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-      <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 px-6 pb-6 gap-6">
-        {/* Image placeholder */}
-        <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0 mt-2" />
+      <DrawerContent className="border-0 px-6 pb-12 pt-6 gap-6">
+
+        {/* Cover image */}
+        {business.cover_image_url ? (
+          <img
+            src={business.cover_image_url}
+            alt={business.name}
+            className="w-full h-[176px] object-cover rounded-2xl shrink-0"
+          />
+        ) : (
+          <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0" />
+        )}
 
         {/* Heading */}
         <div className="flex flex-col gap-1">
-          <h2 className="text-[20px] font-semibold leading-6 tracking-tight text-[#0a0a0a]">
+          <h2 className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">
             Enroll to {business.name}
           </h2>
           <p className="text-sm text-[#737373] leading-5">
-            Enroll to {business.name} and start earning rewards, which get even better the longer you stay with us.
+            Enroll to {business.name} and start earning rewards, which only get better the longer you stay with us.
           </p>
         </div>
 
@@ -73,32 +83,18 @@ export default function EnrollPromptDrawer({
             <div>
               <p className="text-base font-medium text-[#0a0a0a] leading-6">Loyalty points</p>
               <p className="text-sm text-[#737373] leading-5">
-                You've earned 20 points with {business.name}
+                {joinPoints != null
+                  ? `By enrolling you earn ${joinPoints} ${currencyName}`
+                  : `Earn ${currencyName} with every visit`}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Join points card */}
-        {joinPoints != null && (
-          <div className="flex items-center gap-3 border border-[#e5e5e5] rounded-lg p-4">
-            <div className="size-[40px] rounded-full flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(180deg, #ffdc99 0%, #f5be53 100%)' }}>
-              <span className="text-[#c37a1a] font-bold text-base">★</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <p className="text-sm text-[#737373] leading-5">Enroll now and get</p>
-              <p className="text-[30px] font-semibold leading-8 tracking-[-1px] text-[#0a0a0a]">
-                {joinPoints}
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* CTA */}
         <button
           onClick={onGoogleEnroll}
-          className="bg-[#171717] text-white text-sm font-medium rounded-lg h-12 w-full flex items-center justify-center"
+          className="bg-[#171717] text-white text-sm font-medium rounded-lg h-9 w-full flex items-center justify-center"
         >
           Enroll using Google
         </button>

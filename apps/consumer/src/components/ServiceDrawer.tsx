@@ -32,6 +32,19 @@ function formatEarnedPoints(program: ConsumerLoyaltyProgram | null): string {
   return 'Loyalty points'
 }
 
+function CoinIcon() {
+  return (
+    <div className="relative shrink-0 size-4">
+      <div className="absolute inset-y-[3.13%] left-[6.25%] right-0 rounded-full bg-[#c37a1a]" />
+      <div className="absolute inset-y-[3.13%] left-0 right-[6.25%] rounded-full bg-gradient-to-b from-[#ffdc99] to-[#f5be53] flex items-center justify-center">
+        <svg viewBox="0 0 10 10" className="size-[60%]" fill="#c37a1a">
+          <path d="M5 0.5l1.18 2.39 2.64.38-1.91 1.86.45 2.63L5 6.5 2.64 7.76l.45-2.63L1.18 3.27l2.64-.38L5 0.5z" />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
 export default function ServiceDrawer({ open, service, program, isEnrolled, onEnrollRequired, onClose }: ServiceDrawerProps) {
   function handleCta() {
     if (!isEnrolled) {
@@ -39,25 +52,29 @@ export default function ServiceDrawer({ open, service, program, isEnrolled, onEn
       onEnrollRequired?.()
     }
   }
+
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
-      <DrawerContent className="mt-0 max-h-[90vh] overflow-y-auto border-0 pb-12">
+      <DrawerContent className="border-0 pb-12">
+
         {/* Service image */}
-        {service?.image_url ? (
-          <img
-            src={service.image_url}
-            alt={service.name}
-            className="w-full h-[176px] object-cover shrink-0"
-          />
-        ) : (
-          <div className="bg-[#f5f5f5] h-[176px] w-full shrink-0" />
-        )}
+        <div className="px-4 pt-4">
+          {service?.image_url ? (
+            <img
+              src={service.image_url}
+              alt={service?.name}
+              className="w-full h-[148px] object-cover rounded-2xl shrink-0"
+            />
+          ) : (
+            <div className="bg-[#f5f5f5] h-[148px] w-full rounded-2xl shrink-0" />
+          )}
+        </div>
 
         {service && (
           <>
             {/* Heading */}
             <div className="flex flex-col gap-1 px-4 py-4">
-              <h2 className="text-[20px] font-semibold leading-6 tracking-tight text-[#0a0a0a]">
+              <h2 className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">
                 {service.name}
               </h2>
               {service.description && (
@@ -67,7 +84,7 @@ export default function ServiceDrawer({ open, service, program, isEnrolled, onEn
 
             {/* Duration row */}
             {service.duration_minutes != null && (
-              <div className="flex items-center px-4 py-4 border-t border-[#f5f5f5]">
+              <div className="flex items-center px-4 py-3">
                 <p className="flex-1 text-sm font-medium text-[#0a0a0a] leading-5">Duration</p>
                 <p className="text-sm font-medium text-[#0a0a0a] leading-5 whitespace-nowrap">
                   {service.duration_minutes} min
@@ -76,14 +93,17 @@ export default function ServiceDrawer({ open, service, program, isEnrolled, onEn
             )}
 
             {/* Points earned row */}
-            <div className="flex items-start px-4 py-4 border-t border-[#f5f5f5]">
-              <div className="flex-1 flex flex-col gap-1">
+            <div className="flex items-start px-4 py-3">
+              <div className="flex-1 flex flex-col gap-0.5">
                 <p className="text-sm font-medium text-[#0a0a0a] leading-5">Points earned</p>
                 <p className="text-sm text-[#737373] leading-5">Subscribe to earn pts every month</p>
               </div>
-              <p className="text-sm font-medium text-[#0a0a0a] leading-5 whitespace-nowrap ml-4">
-                {formatEarnedPoints(program)}
-              </p>
+              <div className="flex items-center gap-1 ml-4">
+                <CoinIcon />
+                <p className="text-sm font-medium text-[#0a0a0a] leading-5 whitespace-nowrap">
+                  {formatEarnedPoints(program)}
+                </p>
+              </div>
             </div>
 
             {/* CTA buttons */}
