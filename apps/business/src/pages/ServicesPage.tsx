@@ -15,6 +15,7 @@ interface ServiceRow {
   status: string
   category: string | null
   image_url: string | null
+  service_images: { url: string; sort_order: number }[]
 }
 
 type FilterTab = 'all' | 'active' | 'draft' | 'inactive'
@@ -26,10 +27,10 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 }
 
 const DEMO_SERVICE_ROWS: ServiceRow[] = [
-  { id: 'demo-1', name: 'Signature cut & style',       price_cents: 8500,  status: 'active', category: 'Haircut',   image_url: null },
-  { id: 'demo-2', name: 'Full color & highlights',      price_cents: 18000, status: 'active', category: 'Color',     image_url: null },
-  { id: 'demo-3', name: 'Blowout & finish',             price_cents: 5500,  status: 'active', category: 'Styling',   image_url: null },
-  { id: 'demo-4', name: 'Deep conditioning treatment',  price_cents: 4500,  status: 'draft',  category: 'Treatment', image_url: null },
+  { id: 'demo-1', name: 'Signature cut & style',       price_cents: 8500,  status: 'active', category: 'Haircut',   image_url: null, service_images: [] },
+  { id: 'demo-2', name: 'Full color & highlights',      price_cents: 18000, status: 'active', category: 'Color',     image_url: null, service_images: [] },
+  { id: 'demo-3', name: 'Blowout & finish',             price_cents: 5500,  status: 'active', category: 'Styling',   image_url: null, service_images: [] },
+  { id: 'demo-4', name: 'Deep conditioning treatment',  price_cents: 4500,  status: 'draft',  category: 'Treatment', image_url: null, service_images: [] },
 ]
 
 export default function ServicesPage() {
@@ -51,7 +52,7 @@ export default function ServicesPage() {
       const { data: business, error: bizErr } = await supabase
         .from('businesses')
         .select('id')
-        .eq('owner_id', user.id)
+        .eq('owner_id', user!.id)
         .maybeSingle()
 
       if (bizErr || !business) {
@@ -62,7 +63,7 @@ export default function ServicesPage() {
 
       const { data, error: svcErr } = await supabase
         .from('services')
-        .select('id, name, price_cents, status, category, image_url')
+        .select('id, name, price_cents, status, category, image_url, service_images(url, sort_order)')
         .eq('business_id', business.id)
         .order('created_at', { ascending: true })
 
@@ -155,7 +156,7 @@ export default function ServicesPage() {
         renderItem={svc => (
           <ResourceListItem
             key={svc.id}
-            imageUrl={svc.image_url}
+            imageUrl={svc.image_url ?? svc.service_images?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null}
             title={svc.name}
             subtitle={svc.price_cents != null ? `$${(svc.price_cents / 100).toFixed(2)}` : '—'}
             badge={STATUS_BADGE[svc.status] ?? STATUS_BADGE.draft}
