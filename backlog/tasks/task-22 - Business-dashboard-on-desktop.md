@@ -1,10 +1,10 @@
 ---
 id: TASK-22
 title: Business dashboard on desktop
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-07 05:01'
-updated_date: '2026-03-16 18:14'
+updated_date: '2026-03-19 16:04'
 labels: []
 dependencies: []
 references:
@@ -14,7 +14,7 @@ references:
   - apps/business/src/pages/ProgramPage.tsx
   - apps/business/src/pages/ServicesPage.tsx
   - apps/business/src/pages/CustomersPage.tsx
-ordinal: 15000
+ordinal: 28000
 ---
 
 ## Description

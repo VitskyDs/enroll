@@ -1,10 +1,10 @@
 ---
 id: TASK-34
 title: Connect business and consumer apps to joinenroll.app domain
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-17 18:45'
-updated_date: '2026-03-17 18:52'
+updated_date: '2026-03-19 16:04'
 labels: []
 dependencies: []
 references:
@@ -13,6 +13,7 @@ references:
   - apps/business/.env.local
   - apps/consumer/.env.local
 priority: medium
+ordinal: 29000
 ---
 
 ## Description

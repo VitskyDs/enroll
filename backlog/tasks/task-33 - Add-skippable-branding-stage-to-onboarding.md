@@ -1,9 +1,10 @@
 ---
 id: TASK-33
 title: Add skippable branding stage to onboarding
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-03-16 18:16'
+updated_date: '2026-03-19 16:12'
 labels:
   - onboarding
   - branding
@@ -17,6 +18,7 @@ references:
   - apps/business/src/types/index.ts
   - apps/business/src/lib/supabase.ts
 priority: medium
+ordinal: 1000
 ---
 
 ## Description
