@@ -27,10 +27,10 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 }
 
 const DEMO_SERVICE_ROWS: ServiceRow[] = [
-  { id: 'demo-1', name: 'Signature cut & style',       price_cents: 8500,  status: 'active', category: 'Haircut',   image_url: null, service_images: [] },
-  { id: 'demo-2', name: 'Full color & highlights',      price_cents: 18000, status: 'active', category: 'Color',     image_url: null, service_images: [] },
-  { id: 'demo-3', name: 'Blowout & finish',             price_cents: 5500,  status: 'active', category: 'Styling',   image_url: null, service_images: [] },
-  { id: 'demo-4', name: 'Deep conditioning treatment',  price_cents: 4500,  status: 'draft',  category: 'Treatment', image_url: null, service_images: [] },
+  { id: 'demo-1', name: 'Signature cut & style',       price_cents: 8500,  status: 'active', category: 'Haircut',   image_url: null, service_images: [{ url: 'https://fhbgyigrzbmdwdxvuqfh.supabase.co/storage/v1/object/public/service-images/1774011504379-khd9n6jqlpg.png', sort_order: 0 }] },
+  { id: 'demo-2', name: 'Full color & highlights',      price_cents: 18000, status: 'active', category: 'Color',     image_url: null, service_images: [{ url: 'https://fhbgyigrzbmdwdxvuqfh.supabase.co/storage/v1/object/public/service-images/1774011797039-i3m1604p5n.png', sort_order: 0 }] },
+  { id: 'demo-3', name: 'Blowout & finish',             price_cents: 5500,  status: 'active', category: 'Styling',   image_url: null, service_images: [{ url: 'https://fhbgyigrzbmdwdxvuqfh.supabase.co/storage/v1/object/public/service-images/1774011813111-wpt3ezxk02.png', sort_order: 0 }] },
+  { id: 'demo-4', name: 'Deep conditioning treatment',  price_cents: 4500,  status: 'draft',  category: 'Treatment', image_url: null, service_images: [{ url: 'https://fhbgyigrzbmdwdxvuqfh.supabase.co/storage/v1/object/public/service-images/1774011823228-wb10xvvdwi.png', sort_order: 0 }] },
 ]
 
 export default function ServicesPage() {
