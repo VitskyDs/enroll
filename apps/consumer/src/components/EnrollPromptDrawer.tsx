@@ -1,6 +1,5 @@
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { BadgeCheck } from 'lucide-react'
-import { useState } from 'react'
 import type { ConsumerBusiness } from '@/hooks/useBusiness'
 import type { ConsumerLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
@@ -45,50 +44,25 @@ export default function EnrollPromptDrawer({
 }: EnrollPromptDrawerProps) {
   const joinPoints = getJoinPoints(program)
   const currencyName = program?.currency_name ?? 'points'
-  const [logoError, setLogoError] = useState(false)
-
-  const initials = business.name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
 
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
       <DrawerContent className="border-0 px-6 pb-12 pt-6 gap-6" aria-describedby={undefined}>
         <VisuallyHidden><DrawerTitle>Enroll to {business.name}</DrawerTitle></VisuallyHidden>
 
-        {/* Cover image + logo */}
-        <div className="relative shrink-0">
-          {business.cover_image_url ? (
-            <img
-              src={business.cover_image_url}
-              alt={business.name}
-              className="w-full h-[176px] object-cover rounded-2xl"
-            />
-          ) : (
-            <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full" />
-          )}
-          {/* Logo circle */}
-          <div className="absolute bottom-0 translate-y-1/2 left-4 size-12 rounded-full bg-white border border-[#e5e5e5] shadow-sm overflow-hidden flex items-center justify-center">
-            {business.logo_url && !logoError ? (
-              <img
-                src={business.logo_url}
-                alt={business.name}
-                className="w-full h-full object-cover"
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <span className="text-[14px] font-semibold text-[#404040] leading-none select-none">
-                {initials}
-              </span>
-            )}
-          </div>
-        </div>
+        {/* Cover image */}
+        {business.cover_image_url ? (
+          <img
+            src={business.cover_image_url}
+            alt={business.name}
+            className="w-full h-[176px] object-cover rounded-2xl shrink-0"
+          />
+        ) : (
+          <div className="bg-[#f5f5f5] rounded-2xl h-[176px] w-full shrink-0" />
+        )}
 
-        {/* Heading — pt-4 accounts for the logo circle overlap */}
-        <div className="flex flex-col gap-1 pt-4">
+        {/* Heading */}
+        <div className="flex flex-col gap-1">
           <h2 className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">
             Enroll to {business.name}
           </h2>
