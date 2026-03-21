@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import BottomNav from '@/components/BottomNav'
 import OnboardingPage from '@/pages/OnboardingPage'
@@ -14,7 +14,9 @@ import JoinPage from '@/pages/JoinPage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 
 function AppLayout() {
+  const { pathname } = useLocation()
   const { isEnrolled } = useAuth()
+  const showNav = isEnrolled && !pathname.startsWith('/auth/') && !pathname.startsWith('/join/')
 
   return (
     <div className="flex flex-col h-full">
@@ -35,7 +37,7 @@ function AppLayout() {
           <Route path="/join/:slug" element={<JoinPage />} />
         </Routes>
       </div>
-      {isEnrolled && <BottomNav />}
+      {showNav && <BottomNav />}
     </div>
   )
 }
