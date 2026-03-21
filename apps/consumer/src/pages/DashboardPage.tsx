@@ -149,7 +149,7 @@ export default function DashboardPage() {
           {business?.cover_image_url && (
             <div className="relative rounded-lg h-[165px] w-full overflow-hidden bg-[#f5f5f5]">
               <img
-                src={business.cover_image_url}
+                src={encodeURI(business.cover_image_url)}
                 alt={business.name}
                 className="absolute inset-0 w-full h-full object-cover"
               />
