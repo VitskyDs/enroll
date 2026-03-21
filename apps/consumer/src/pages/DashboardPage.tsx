@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Clock, MapPin, Images, Share2 } from 'lucide-react'
+import { Clock, MapPin, Share2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useBusiness } from '@/hooks/useBusiness'
 import { useServices, type ConsumerService } from '@/hooks/useServices'
@@ -153,11 +153,6 @@ export default function DashboardPage() {
                 alt={business.name}
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              {/* Gallery pill */}
-              <button className="absolute bottom-3 right-3 z-10 bg-[#f5f5f5] rounded-lg flex items-center gap-1.5 px-2 py-1">
-                <Images size={12} className="text-[#171717]" />
-                <span className="text-xs font-medium text-[#171717]">Gallery</span>
-              </button>
             </div>
           )}
           {/* Logo circle — overlaps cover when cover exists, inline otherwise */}
