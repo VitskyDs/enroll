@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, UserX, ReceiptText, User, CreditCard, TicketPercent, ChevronRight, Pencil } from 'lucide-react'
+import { LogOut, UserX, ReceiptText, User, CreditCard, TicketPercent, ChevronRight, Pencil, LogIn } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import BottomNav from '@/components/BottomNav'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   Drawer,
   DrawerContent,
@@ -18,11 +18,6 @@ interface ProfileUser {
   name: string
   email: string
   avatarUrl: string | null
-}
-
-interface CustomerRecord {
-  id: string
-  points: number
 }
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
@@ -69,14 +64,16 @@ function SectionItem({ icon, label, labelClassName, trailing, onClick }: Section
 
 export default function ProfilePage() {
   const navigate = useNavigate()
+  const { enrolledCustomer, setEnrolledCustomer, businessId } = useAuth()
   const [user, setUser] = useState<ProfileUser | null>(null)
-  const [customer, setCustomer] = useState<CustomerRecord | null>(null)
   const [loading, setLoading] = useState(true)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showUnenrollConfirm, setShowUnenrollConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [unenrolling, setUnenrolling] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
       if (!authUser) {
         setLoading(false)
         return
@@ -88,15 +85,6 @@ export default function ProfilePage() {
         avatarUrl: authUser.user_metadata?.avatar_url ?? null,
       })
 
-      const { data } = await supabase
-        .from('customers')
-        .select('id, points')
-        .eq('user_id', authUser.id)
-        .order('joined_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (data) setCustomer(data as CustomerRecord)
       setLoading(false)
     })
   }, [])
@@ -104,6 +92,16 @@ export default function ProfilePage() {
   async function handleLogout() {
     await supabase.auth.signOut()
     navigate('/dashboard')
+  }
+
+  async function handleUnenroll() {
+    if (!enrolledCustomer) return
+    setUnenrolling(true)
+    await supabase.from('customers').delete().eq('id', enrolledCustomer.id)
+    setEnrolledCustomer(null)
+    setUnenrolling(false)
+    setShowUnenrollConfirm(false)
+    navigate(businessId ? `/dashboard?business=${businessId}` : '/dashboard')
   }
 
   async function handleDeleteAccount() {
@@ -118,7 +116,7 @@ export default function ProfilePage() {
     navigate('/dashboard')
   }
 
-  const pointsDisplay = customer?.points != null ? `${customer.points} points` : null
+  const pointsDisplay = enrolledCustomer?.points != null ? `${enrolledCustomer.points} points` : null
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -214,6 +212,17 @@ export default function ProfilePage() {
         <div className="flex flex-col gap-4 p-4 pb-6">
           <p className="text-base font-semibold leading-6 text-[#0a0a0a]">Account</p>
           <div className="flex flex-col">
+            {enrolledCustomer && (
+              <>
+                <SectionItem
+                  icon={<LogIn size={24} className="text-[#737373]" />}
+                  label="Unenroll"
+                  labelClassName="text-[#737373]"
+                  onClick={() => setShowUnenrollConfirm(true)}
+                />
+                <Divider />
+              </>
+            )}
             <SectionItem
               icon={<LogOut size={24} />}
               label="Logout"
@@ -231,7 +240,32 @@ export default function ProfilePage() {
 
       </div>
 
-      <BottomNav />
+      {/* ── Unenroll confirmation action sheet ───────────────────── */}
+      <Drawer open={showUnenrollConfirm} onOpenChange={setShowUnenrollConfirm}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Unenroll</DrawerTitle>
+            <DrawerDescription>
+              This will remove you from this loyalty program and forfeit any unredeemed points. Your account will remain active.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <button
+              onClick={handleUnenroll}
+              disabled={unenrolling}
+              className="flex items-center justify-center bg-[#171717] text-white rounded-lg h-10 w-full text-sm font-medium disabled:opacity-50"
+            >
+              {unenrolling ? 'Unenrolling...' : 'Unenroll'}
+            </button>
+            <button
+              onClick={() => setShowUnenrollConfirm(false)}
+              className="flex items-center justify-center bg-[#f5f5f5] text-[#0a0a0a] rounded-lg h-10 w-full text-sm font-medium"
+            >
+              Cancel
+            </button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* ── Delete confirmation action sheet ─────────────────────── */}
       <Drawer open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

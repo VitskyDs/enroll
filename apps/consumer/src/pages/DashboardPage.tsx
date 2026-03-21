@@ -1,22 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Clock, MapPin, Share2 } from 'lucide-react'
+import { Clock, MapPin, Menu, Share2, Star } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { useBusiness } from '@/hooks/useBusiness'
 import { useServices, type ConsumerService } from '@/hooks/useServices'
 import { useLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
-import { formatRefereeReward } from '@/lib/referral'
 import { cn } from '@/lib/utils'
 import EnrollmentDrawer from '@/components/EnrollmentDrawer'
 import EnrollPromptDrawer from '@/components/EnrollPromptDrawer'
 import ServiceDrawer from '@/components/ServiceDrawer'
 import ServiceCard from '@/components/ServiceCard'
-import BottomNav from '@/components/BottomNav'
-
-interface EnrolledCustomer {
-  id: string
-  points: number
-}
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
@@ -24,97 +18,125 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={cn('bg-black/[0.08] animate-pulse rounded-lg', className)} />
 }
 
+// ── Points coin icon ──────────────────────────────────────────────────────────
+
+function PointsCoin() {
+  return (
+    <div className="relative size-6">
+      {/* Side accent */}
+      <div className="absolute inset-[3%] rounded-full bg-[#c37a1a]" />
+      {/* Front face */}
+      <div className="absolute inset-[3%_6%_3%_0] rounded-full bg-gradient-to-b from-[#ffdc99] to-[#f5be53] flex items-center justify-center">
+        <Star size={10} className="text-white fill-white" />
+      </div>
+    </div>
+  )
+}
+
+// ── User avatar ───────────────────────────────────────────────────────────────
+
+function UserAvatar({ name, email }: { name?: string; email?: string }) {
+  const initials = name
+    ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+    : email
+      ? email[0].toUpperCase()
+      : '?'
+
+  return (
+    <div className="size-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+      <span className="text-[14px] font-semibold text-[#0a0a0a] leading-5 select-none">
+        {initials}
+      </span>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [searchParams] = useSearchParams()
-  const businessId = searchParams.get('business') ?? undefined
+  const urlBusinessId = searchParams.get('business') ?? undefined
 
-  const { business, loading: bizLoading } = useBusiness(businessId)
-  const { services, loading: svcLoading } = useServices(businessId ?? business?.id)
-  const { program } = useLoyaltyProgram(businessId ?? business?.id)
+  const { user, enrolledCustomer, setEnrolledCustomer, setBusinessId, isEnrolled } = useAuth()
+
+  const { business, loading: bizLoading } = useBusiness(urlBusinessId)
+  const { services, loading: svcLoading } = useServices(urlBusinessId ?? business?.id)
+  const { program } = useLoyaltyProgram(urlBusinessId ?? business?.id)
 
   const [selectedService, setSelectedService] = useState<ConsumerService | null>(null)
   const [logoError, setLogoError] = useState(false)
   const [showEnrollPrompt, setShowEnrollPrompt] = useState(false)
   const [showEnrollmentDrawer, setShowEnrollmentDrawer] = useState(false)
-  const [enrolledCustomer, setEnrolledCustomer] = useState<EnrolledCustomer | null>(null)
 
-  const isEnrolled = enrolledCustomer !== null
-
-  // Check if user is already signed in + enrolled on mount
+  // Inform context about the resolved businessId (handles the fallback case
+  // where no ?business= param is present and useBusiness returns the latest)
   useEffect(() => {
-    const resolvedBusinessId = businessId ?? business?.id
+    const resolved = urlBusinessId ?? business?.id
+    if (resolved) setBusinessId(resolved)
+  }, [urlBusinessId, business?.id])
+
+  // Auto-enroll: when a signed-in user visits with a resolved business but is
+  // not yet enrolled, check for an existing customer record or create one.
+  // This replaces the old onAuthStateChange approach which had a race condition
+  // (the SIGNED_IN event fired before business data was available).
+  useEffect(() => {
+    if (!user || isEnrolled) return
+
+    const resolvedBusinessId = urlBusinessId ?? business?.id
     if (!resolvedBusinessId) return
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) return
-      const { data } = await supabase
+    let cancelled = false
+
+    async function checkAndEnroll() {
+      // Check whether customer already exists (returning user)
+      const { data: existing } = await supabase
         .from('customers')
         .select('id, points')
-        .eq('user_id', session.user.id)
-        .eq('business_id', resolvedBusinessId)
+        .eq('user_id', user!.id)
+        .eq('business_id', resolvedBusinessId!)
         .maybeSingle()
-      if (data) setEnrolledCustomer(data as EnrolledCustomer)
-    })
-  }, [businessId, business?.id])
 
-  // Detect Google OAuth redirect and handle enrollment
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const resolvedBusinessId = businessId ?? business?.id
-          if (!resolvedBusinessId) return
+      if (cancelled) return
 
-          const user = session.user
-
-          // Check if customer already enrolled
-          const { data: existing } = await supabase
-            .from('customers')
-            .select('id, points')
-            .eq('user_id', user.id)
-            .eq('business_id', resolvedBusinessId)
-            .maybeSingle()
-
-          if (existing) {
-            // Returning user — restore session silently
-            setEnrolledCustomer(existing as EnrolledCustomer)
-            return
-          }
-
-          // New enrollment
-          const { data: customer } = await supabase
-            .from('customers')
-            .insert({
-              user_id: user.id,
-              business_id: resolvedBusinessId,
-              name: user.user_metadata?.full_name ?? user.email ?? 'Guest',
-              email: user.email,
-              status: 'active',
-              points: 0,
-              joined_at: new Date().toISOString(),
-            })
-            .select('id, points')
-            .single()
-
-          if (customer) {
-            setEnrolledCustomer(customer as EnrolledCustomer)
-            setShowEnrollmentDrawer(true)
-          }
-        }
+      if (existing) {
+        setEnrolledCustomer(existing)
+        return
       }
-    )
 
-    return () => subscription.unsubscribe()
-  }, [businessId, business?.id])
+      // New enrollment — create customer record and show confirmation drawer
+      const { data: customer } = await supabase
+        .from('customers')
+        .insert({
+          user_id: user!.id,
+          business_id: resolvedBusinessId!,
+          name: user!.user_metadata?.full_name ?? user!.email ?? 'Guest',
+          email: user!.email,
+          status: 'active',
+          points: 0,
+          joined_at: new Date().toISOString(),
+        })
+        .select('id, points')
+        .single()
+
+      if (cancelled) return
+
+      if (customer) {
+        setEnrolledCustomer(customer)
+        setShowEnrollmentDrawer(true)
+      }
+    }
+
+    checkAndEnroll()
+
+    return () => { cancelled = true }
+  }, [user?.id, urlBusinessId, business?.id, isEnrolled])
 
   function handleEnroll() {
     setShowEnrollPrompt(true)
   }
 
-  async function handleGoogleEnroll() {
-    const resolvedBusinessId = businessId ?? business?.id
+  async function handleSignIn() {
+    const resolvedBusinessId = urlBusinessId ?? business?.id
     if (resolvedBusinessId) {
       sessionStorage.setItem('enroll_business_id', resolvedBusinessId)
     }
@@ -125,26 +147,47 @@ export default function DashboardPage() {
     })
   }
 
-  // Derive the enrollment incentive copy from the program
-  const currencyName = program?.currency_name ?? 'points'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rules = (program?.referral_rules ?? {}) as Record<string, any>
-  const refereeReward = program ? formatRefereeReward(rules, currencyName) : null
-  const bannerTitle = program
-    ? `Join ${program.program_name} and get rewarded`
-    : 'Earn rewards on every visit'
-  const bannerSub = refereeReward
-    ? `When you enroll. ${refereeReward}.`
-    : 'Points on every visit.'
-
   const loading = bizLoading
 
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex-1 overflow-y-auto">
 
+        {/* ── Top header bar ────────────────────────────────────────── */}
+        <div className="flex items-center justify-between pt-16 pb-4 px-4 bg-white shrink-0">
+          {/* Left: hamburger menu */}
+          <button className="flex items-center justify-center min-h-[36px] min-w-[36px] p-2 rounded-lg">
+            <Menu size={16} className="text-[#171717]" />
+          </button>
+
+          {/* Right: sign in or points + avatar */}
+          {isEnrolled ? (
+            <div className="flex items-center gap-2">
+              {/* Points badge */}
+              <div className="flex items-center gap-2 border border-[#e5e5e5] rounded-md px-4 py-2">
+                <PointsCoin />
+                <span className="text-[16px] font-semibold text-[#0a0a0a] leading-6">
+                  {enrolledCustomer?.points ?? 0}
+                </span>
+              </div>
+              {/* Avatar */}
+              <UserAvatar
+                name={user?.user_metadata?.full_name}
+                email={user?.email}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={handleSignIn}
+              className="bg-[#f5f5f5] rounded-lg px-4 py-2 min-h-[36px]"
+            >
+              <span className="text-[14px] font-medium text-[#171717] leading-5">Sign in</span>
+            </button>
+          )}
+        </div>
+
         {/* ── Header — cover image + logo ──────────────────────────── */}
-        <div className={cn('relative px-4', business?.cover_image_url ? 'pb-[28px] pt-[64px]' : 'pt-4')}>
+        <div className={cn('relative px-4', business?.cover_image_url ? 'pb-[28px]' : '')}>
           {/* Cover image — only shown when URL exists */}
           {business?.cover_image_url && (
             <div className="relative rounded-lg h-[165px] w-full overflow-hidden bg-[#f5f5f5]">
@@ -176,7 +219,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Main content ─────────────────────────────────────────── */}
-        <div className="px-4 pt-2 flex flex-col gap-6">
+        <div className="px-4 pt-6 flex flex-col gap-6">
 
           {/* Title row */}
           <div className="flex gap-2 items-start">
@@ -199,26 +242,11 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Right: share icon (always visible) + enroll button (hidden when enrolled) */}
-            <div className="flex flex-col gap-1 items-end shrink-0">
-              <div className="flex gap-2 items-center">
-                <button className="bg-[#f5f5f5] rounded-full size-8 flex items-center justify-center">
-                  <Share2 size={16} className="text-[#171717]" />
-                </button>
-                {!isEnrolled && (
-                  <button
-                    onClick={handleEnroll}
-                    className="bg-[#171717] text-white text-[14px] font-medium rounded-full px-3 h-8 whitespace-nowrap"
-                  >
-                    Enroll
-                  </button>
-                )}
-              </div>
-              {!isEnrolled && (
-                <p className="text-[12px] text-[#737373] leading-4">
-                  {refereeReward ? `Free. ${refereeReward} on join.` : 'Free to join.'}
-                </p>
-              )}
+            {/* Right: share icon */}
+            <div className="shrink-0">
+              <button className="bg-[#f5f5f5] rounded-full size-8 flex items-center justify-center">
+                <Share2 size={16} className="text-[#171717]" />
+              </button>
             </div>
           </div>
 
@@ -247,28 +275,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Loyalty enrollment banner — hidden once enrolled */}
-          {!isEnrolled && (
-            <div className="bg-[#f5f5f5] rounded-2xl flex items-start overflow-hidden">
-              <div className="flex-1 flex flex-col gap-4 p-4">
-                <div className="flex flex-col gap-1">
-                  <p className="text-[18px] font-semibold leading-[27px] text-black">{bannerTitle}</p>
-                  <p className="text-[14px] text-[#737373] leading-5">{bannerSub}</p>
-                </div>
-                <button
-                  onClick={handleEnroll}
-                  className="bg-[#171717] text-white text-[14px] font-medium rounded-full px-6 h-10 self-start whitespace-nowrap"
-                >
-                  Enroll now
-                </button>
-              </div>
-              {/* Decorative image placeholder */}
-              <div className="w-[120px] self-stretch bg-[#e5e5e5] shrink-0" />
-            </div>
-          )}
-
           {/* Services section */}
-          <div className={cn('flex flex-col gap-4', isEnrolled ? 'pb-28' : 'pb-8')}>
+          <div className="flex flex-col gap-4 pb-8">
             <div className="flex flex-col gap-1">
               <p className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">Services</p>
               <p className="text-base text-[#737373] leading-6">Subscribe to popular services and save</p>
@@ -314,7 +322,7 @@ export default function DashboardPage() {
           business={business}
           program={program}
           onClose={() => setShowEnrollPrompt(false)}
-          onGoogleEnroll={handleGoogleEnroll}
+          onGoogleEnroll={handleSignIn}
         />
       )}
 
@@ -328,9 +336,6 @@ export default function DashboardPage() {
           onClose={() => setShowEnrollmentDrawer(false)}
         />
       )}
-
-      {/* ── Consumer navbar — visible once enrolled ───────────────── */}
-      {isEnrolled && <BottomNav />}
     </div>
   )
 }

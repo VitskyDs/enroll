@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import BottomNav from '@/components/BottomNav'
 import OnboardingPage from '@/pages/OnboardingPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ServiceDrawerPage from '@/pages/ServiceDrawerPage'
@@ -11,22 +13,39 @@ import ProfilePage from '@/pages/ProfilePage'
 import JoinPage from '@/pages/JoinPage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 
+function AppLayout() {
+  const { pathname } = useLocation()
+  const { isEnrolled } = useAuth()
+  const showNav = isEnrolled && !pathname.startsWith('/auth/') && !pathname.startsWith('/join/')
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0">
+        <Routes>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/dashboard" element={<DashboardPage />}>
+            <Route path="service/:id" element={<ServiceDrawerPage />} />
+          </Route>
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout/confirmation" element={<PurchaseConfirmationPage />} />
+          <Route path="/refer" element={<ReferPage />} />
+          <Route path="/refer/track" element={<TrackReferralsPage />} />
+          <Route path="/loyalty" element={<LoyaltyProgramPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/join/:slug" element={<JoinPage />} />
+        </Routes>
+      </div>
+      {showNav && <BottomNav />}
+    </div>
+  )
+}
+
 export default function App() {
   return (
-    <Routes>
-      <Route index element={<Navigate to="/dashboard" replace />} />
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/dashboard" element={<DashboardPage />}>
-        <Route path="service/:id" element={<ServiceDrawerPage />} />
-      </Route>
-      <Route path="/checkout" element={<CheckoutPage />} />
-      <Route path="/checkout/confirmation" element={<PurchaseConfirmationPage />} />
-      <Route path="/refer" element={<ReferPage />} />
-      <Route path="/refer/track" element={<TrackReferralsPage />} />
-      <Route path="/loyalty" element={<LoyaltyProgramPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/join/:slug" element={<JoinPage />} />
-    </Routes>
+    <AuthProvider>
+      <AppLayout />
+    </AuthProvider>
   )
 }
