@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Clock, MapPin, Share2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { useBusiness } from '@/hooks/useBusiness'
 import { useServices, type ConsumerService } from '@/hooks/useServices'
 import { useLoyaltyProgram } from '@/hooks/useLoyaltyProgram'
@@ -11,12 +12,6 @@ import EnrollmentDrawer from '@/components/EnrollmentDrawer'
 import EnrollPromptDrawer from '@/components/EnrollPromptDrawer'
 import ServiceDrawer from '@/components/ServiceDrawer'
 import ServiceCard from '@/components/ServiceCard'
-import BottomNav from '@/components/BottomNav'
-
-interface EnrolledCustomer {
-  id: string
-  points: number
-}
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
@@ -28,93 +23,79 @@ function Skeleton({ className }: { className?: string }) {
 
 export default function DashboardPage() {
   const [searchParams] = useSearchParams()
-  const businessId = searchParams.get('business') ?? undefined
+  const urlBusinessId = searchParams.get('business') ?? undefined
 
-  const { business, loading: bizLoading } = useBusiness(businessId)
-  const { services, loading: svcLoading } = useServices(businessId ?? business?.id)
-  const { program } = useLoyaltyProgram(businessId ?? business?.id)
+  const { enrolledCustomer, setEnrolledCustomer, setBusinessId, isEnrolled } = useAuth()
+
+  const { business, loading: bizLoading } = useBusiness(urlBusinessId)
+  const { services, loading: svcLoading } = useServices(urlBusinessId ?? business?.id)
+  const { program } = useLoyaltyProgram(urlBusinessId ?? business?.id)
 
   const [selectedService, setSelectedService] = useState<ConsumerService | null>(null)
   const [logoError, setLogoError] = useState(false)
   const [showEnrollPrompt, setShowEnrollPrompt] = useState(false)
   const [showEnrollmentDrawer, setShowEnrollmentDrawer] = useState(false)
-  const [enrolledCustomer, setEnrolledCustomer] = useState<EnrolledCustomer | null>(null)
 
-  const isEnrolled = enrolledCustomer !== null
-
-  // Check if user is already signed in + enrolled on mount
+  // Inform context about the resolved businessId (handles the fallback case
+  // where no ?business= param is present and useBusiness returns the latest)
   useEffect(() => {
-    const resolvedBusinessId = businessId ?? business?.id
-    if (!resolvedBusinessId) return
+    const resolved = urlBusinessId ?? business?.id
+    if (resolved) setBusinessId(resolved)
+  }, [urlBusinessId, business?.id])
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) return
-      const { data } = await supabase
-        .from('customers')
-        .select('id, points')
-        .eq('user_id', session.user.id)
-        .eq('business_id', resolvedBusinessId)
-        .maybeSingle()
-      if (data) setEnrolledCustomer(data as EnrolledCustomer)
-    })
-  }, [businessId, business?.id])
-
-  // Detect Google OAuth redirect and handle enrollment
+  // Listen for new sign-ins to handle first-time enrollment.
+  // Returning users are handled by AuthContext's enrollment check.
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const resolvedBusinessId = businessId ?? business?.id
-          if (!resolvedBusinessId) return
+        if (event !== 'SIGNED_IN' || !session?.user) return
 
-          const user = session.user
+        const resolvedBusinessId = urlBusinessId ?? business?.id
+        if (!resolvedBusinessId) return
 
-          // Check if customer already enrolled
-          const { data: existing } = await supabase
-            .from('customers')
-            .select('id, points')
-            .eq('user_id', user.id)
-            .eq('business_id', resolvedBusinessId)
-            .maybeSingle()
+        const user = session.user
 
-          if (existing) {
-            // Returning user — restore session silently
-            setEnrolledCustomer(existing as EnrolledCustomer)
-            return
-          }
+        // Check whether customer already exists (returning user)
+        const { data: existing } = await supabase
+          .from('customers')
+          .select('id, points')
+          .eq('user_id', user.id)
+          .eq('business_id', resolvedBusinessId)
+          .maybeSingle()
 
-          // New enrollment
-          const { data: customer } = await supabase
-            .from('customers')
-            .insert({
-              user_id: user.id,
-              business_id: resolvedBusinessId,
-              name: user.user_metadata?.full_name ?? user.email ?? 'Guest',
-              email: user.email,
-              status: 'active',
-              points: 0,
-              joined_at: new Date().toISOString(),
-            })
-            .select('id, points')
-            .single()
+        if (existing) return // AuthContext will restore enrollment state
 
-          if (customer) {
-            setEnrolledCustomer(customer as EnrolledCustomer)
-            setShowEnrollmentDrawer(true)
-          }
+        // New enrollment — create customer record and show confirmation drawer
+        const { data: customer } = await supabase
+          .from('customers')
+          .insert({
+            user_id: user.id,
+            business_id: resolvedBusinessId,
+            name: user.user_metadata?.full_name ?? user.email ?? 'Guest',
+            email: user.email,
+            status: 'active',
+            points: 0,
+            joined_at: new Date().toISOString(),
+          })
+          .select('id, points')
+          .single()
+
+        if (customer) {
+          setEnrolledCustomer(customer)
+          setShowEnrollmentDrawer(true)
         }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [businessId, business?.id])
+  }, [urlBusinessId, business?.id])
 
   function handleEnroll() {
     setShowEnrollPrompt(true)
   }
 
   async function handleGoogleEnroll() {
-    const resolvedBusinessId = businessId ?? business?.id
+    const resolvedBusinessId = urlBusinessId ?? business?.id
     if (resolvedBusinessId) {
       sessionStorage.setItem('enroll_business_id', resolvedBusinessId)
     }
@@ -268,7 +249,7 @@ export default function DashboardPage() {
           )}
 
           {/* Services section */}
-          <div className={cn('flex flex-col gap-4', isEnrolled ? 'pb-28' : 'pb-8')}>
+          <div className={cn('flex flex-col gap-4', isEnrolled ? 'pb-8' : 'pb-8')}>
             <div className="flex flex-col gap-1">
               <p className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">Services</p>
               <p className="text-base text-[#737373] leading-6">Subscribe to popular services and save</p>
@@ -328,9 +309,6 @@ export default function DashboardPage() {
           onClose={() => setShowEnrollmentDrawer(false)}
         />
       )}
-
-      {/* ── Consumer navbar — visible once enrolled ───────────────── */}
-      {isEnrolled && <BottomNav />}
     </div>
   )
 }
