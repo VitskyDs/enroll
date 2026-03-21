@@ -46,7 +46,7 @@ export function useBusiness(businessId?: string): UseBusinessResult {
         query = query.eq('id', businessId)
       }
 
-      const { data, error: err } = await query.single()
+      const { data, error: err } = await query.maybeSingle()
 
       if (cancelled) return
       if (err) {

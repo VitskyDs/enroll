@@ -45,7 +45,7 @@ export function useLoyaltyProgram(businessId?: string): UseLoyaltyProgramResult 
         query = query.eq('business_id', businessId)
       }
 
-      const { data, error: err } = await query.single()
+      const { data, error: err } = await query.maybeSingle()
 
       if (cancelled) return
       if (err) {
