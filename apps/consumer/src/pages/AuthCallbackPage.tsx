@@ -14,13 +14,26 @@ export default function AuthCallbackPage() {
         return
       }
 
-      const businessId = sessionStorage.getItem('enroll_business_id')
-      sessionStorage.removeItem('enroll_business_id')
+      const returnUrl = sessionStorage.getItem('enroll_return_url')
+      sessionStorage.removeItem('enroll_return_url')
 
-      if (businessId) {
-        navigate(`/dashboard?business=${businessId}`, { replace: true })
+      if (returnUrl) {
+        // returnUrl is an absolute URL; extract path+search+hash for client-side navigation
+        sessionStorage.removeItem('enroll_business_id')
+        try {
+          const url = new URL(returnUrl)
+          navigate(url.pathname + url.search + url.hash, { replace: true })
+        } catch {
+          navigate('/dashboard', { replace: true })
+        }
       } else {
-        navigate('/dashboard', { replace: true })
+        const businessId = sessionStorage.getItem('enroll_business_id')
+        sessionStorage.removeItem('enroll_business_id')
+        if (businessId) {
+          navigate(`/dashboard?business=${businessId}`, { replace: true })
+        } else {
+          navigate('/dashboard', { replace: true })
+        }
       }
     }
 

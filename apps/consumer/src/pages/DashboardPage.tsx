@@ -118,6 +118,7 @@ export default function DashboardPage() {
     if (resolvedBusinessId) {
       sessionStorage.setItem('enroll_business_id', resolvedBusinessId)
     }
+    sessionStorage.setItem('enroll_return_url', window.location.href)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams: { prompt: 'select_account' } },
