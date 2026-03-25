@@ -15,8 +15,8 @@ import AuthCallbackPage from '@/pages/AuthCallbackPage'
 
 function AppLayout() {
   const { pathname } = useLocation()
-  const { isEnrolled } = useAuth()
-  const showNav = isEnrolled && !pathname.startsWith('/auth/') && !pathname.startsWith('/join/')
+  const { isEnrolled, user } = useAuth()
+  const showNav = (isEnrolled || pathname === '/profile') && !!user && !pathname.startsWith('/auth/') && !pathname.startsWith('/join/')
 
   return (
     <div className="flex flex-col h-full">

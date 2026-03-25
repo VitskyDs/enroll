@@ -23,6 +23,7 @@ export interface Service {
   status?: 'active' | 'draft' | 'inactive'
   image_url?: string | null
   note?: string | null
+  points_value?: number | null
   business_id?: string
   created_at?: string
 }

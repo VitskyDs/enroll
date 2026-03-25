@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Clock, MapPin, Menu, Share2, Star } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
@@ -35,7 +35,15 @@ function PointsCoin() {
 
 // ── User avatar ───────────────────────────────────────────────────────────────
 
-function UserAvatar({ name, email }: { name?: string; email?: string }) {
+function UserAvatar({ name, email, avatarUrl }: { name?: string; email?: string; avatarUrl?: string | null }) {
+  if (avatarUrl) {
+    return (
+      <div className="size-10 rounded-full overflow-hidden bg-[#f5f5f5]">
+        <img src={avatarUrl} alt={name ?? 'User'} className="w-full h-full object-cover" />
+      </div>
+    )
+  }
+
   const initials = name
     ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
     : email
@@ -54,6 +62,7 @@ function UserAvatar({ name, email }: { name?: string; email?: string }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const urlBusinessId = searchParams.get('business') ?? undefined
 
@@ -103,6 +112,21 @@ export default function DashboardPage() {
         return
       }
 
+      // Look up signup bonus from the loyalty program
+      const { data: programData } = await supabase
+        .from('loyalty_programs')
+        .select('referral_rules')
+        .eq('business_id', resolvedBusinessId!)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (cancelled) return
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rules = (programData?.referral_rules ?? {}) as Record<string, any>
+      const signupPoints: number = rules.referee_points ?? rules.points_on_join ?? 0
+
       // New enrollment — create customer record and show confirmation drawer
       const { data: customer } = await supabase
         .from('customers')
@@ -112,7 +136,7 @@ export default function DashboardPage() {
           name: user!.user_metadata?.full_name ?? user!.email ?? 'Guest',
           email: user!.email,
           status: 'active',
-          points: 0,
+          points: signupPoints,
           joined_at: new Date().toISOString(),
         })
         .select('id, points')
@@ -171,10 +195,13 @@ export default function DashboardPage() {
                 </span>
               </div>
               {/* Avatar */}
-              <UserAvatar
-                name={user?.user_metadata?.full_name}
-                email={user?.email}
-              />
+              <button onClick={() => navigate('/profile')}>
+                <UserAvatar
+                  name={user?.user_metadata?.full_name}
+                  email={user?.email}
+                  avatarUrl={user?.user_metadata?.avatar_url}
+                />
+              </button>
             </div>
           ) : (
             <button
