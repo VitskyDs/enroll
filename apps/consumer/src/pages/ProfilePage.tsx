@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, UserX, ReceiptText, User, CreditCard, TicketPercent, ChevronRight, Pencil, LogIn } from 'lucide-react'
+import { LogOut, UserX, ReceiptText, User, ChevronRight, Pencil, LogIn } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -12,19 +12,7 @@ import {
   DrawerFooter,
 } from '@/components/ui/drawer'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface ProfileUser {
-  name: string
-  email: string
-  avatarUrl: string | null
-}
-
 // ── Small helpers ─────────────────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`bg-black/[0.08] animate-pulse rounded-lg ${className ?? ''}`} />
-}
 
 function Divider() {
   return (
@@ -64,30 +52,17 @@ function SectionItem({ icon, label, labelClassName, trailing, onClick }: Section
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { enrolledCustomer, setEnrolledCustomer, businessId } = useAuth()
-  const [user, setUser] = useState<ProfileUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user: authUser, enrolledCustomer, setEnrolledCustomer, businessId } = useAuth()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showUnenrollConfirm, setShowUnenrollConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [unenrolling, setUnenrolling] = useState(false)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (!authUser) {
-        setLoading(false)
-        return
-      }
-
-      setUser({
-        name: authUser.user_metadata?.full_name ?? authUser.email ?? 'User',
-        email: authUser.email ?? '',
-        avatarUrl: authUser.user_metadata?.avatar_url ?? null,
-      })
-
-      setLoading(false)
-    })
-  }, [])
+  const profileUser = authUser ? {
+    name: authUser.user_metadata?.full_name ?? authUser.email ?? 'User',
+    email: authUser.email ?? '',
+    avatarUrl: authUser.user_metadata?.avatar_url ?? null,
+  } : null
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -106,7 +81,6 @@ export default function ProfilePage() {
 
   async function handleDeleteAccount() {
     setDeleting(true)
-    const { data: { user: authUser } } = await supabase.auth.getUser()
     if (authUser) {
       await supabase.from('customers').delete().eq('user_id', authUser.id)
     }
@@ -127,10 +101,10 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="relative size-[120px]">
             <div className="size-[120px] rounded-full overflow-hidden bg-[#f5f5f5]">
-              {user?.avatarUrl ? (
+              {profileUser?.avatarUrl ? (
                 <img
-                  src={user.avatarUrl}
-                  alt={user.name}
+                  src={profileUser.avatarUrl}
+                  alt={profileUser.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -146,23 +120,14 @@ export default function ProfilePage() {
 
           {/* Name + subtitle */}
           <div className="flex flex-col gap-2 text-center w-full">
-            {loading ? (
-              <>
-                <Skeleton className="h-7 w-1/2 mx-auto" />
-                <Skeleton className="h-5 w-2/3 mx-auto" />
-              </>
-            ) : (
-              <>
-                <p className="text-[24px] font-semibold leading-[28.8px] tracking-[-1px] text-[#0a0a0a]">
-                  {user?.name ?? 'User'}
-                </p>
-                <p className="text-[14px] text-[#737373] leading-5">
-                  {pointsDisplay
-                    ? `So far you've saved ${pointsDisplay}`
-                    : `So far you've saved nothing yet`}
-                </p>
-              </>
-            )}
+            <p className="text-[24px] font-semibold leading-[28.8px] tracking-[-1px] text-[#0a0a0a]">
+              {profileUser?.name ?? 'User'}
+            </p>
+            <p className="text-[14px] text-[#737373] leading-5">
+              {pointsDisplay
+                ? `So far you've saved ${pointsDisplay}`
+                : `So far you've saved nothing yet`}
+            </p>
           </div>
         </div>
 
@@ -180,30 +145,6 @@ export default function ProfilePage() {
               icon={<User size={24} />}
               label="Personal details"
               trailing={<ChevronRight size={16} className="text-[#0a0a0a]" />}
-            />
-          </div>
-        </div>
-
-        {/* ── Payment method ───────────────────────────────────────── */}
-        <div className="flex flex-col gap-4 p-4">
-          <p className="text-base font-semibold leading-6 text-[#0a0a0a]">Payment method</p>
-          <div className="flex flex-col">
-            <SectionItem
-              icon={<CreditCard size={24} />}
-              label="0123"
-              trailing={<ChevronRight size={16} className="text-[#0a0a0a]" />}
-            />
-            <Divider />
-            <SectionItem
-              icon={<CreditCard size={24} />}
-              label="6789"
-              trailing={<ChevronRight size={16} className="text-[#0a0a0a]" />}
-            />
-            <Divider />
-            <SectionItem
-              icon={<TicketPercent size={24} />}
-              label="Credits"
-              trailing={<span className="text-[14px] font-medium text-[#0a0a0a]">$15.5</span>}
             />
           </div>
         </div>
